@@ -72,3 +72,4 @@ print "size before semi join reduction: "+str(len(min_relations['R1']))
 semi_join('R1', 'R2', min_relations)
 print "size after semi join reduction: "+str(len(min_relations['R1']))
 print heavy_map(min_relations)
+print "test message again"
