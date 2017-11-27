@@ -1,6 +1,9 @@
 #demo implementation for cyclic queries
 #utilities functions
 import math
+import random
+import heapq
+import globalclass
 
 def build_data(cyc_len, d):
     #a hard coded function to create t-cycles, each relations is a tuple of two variables
@@ -15,10 +18,12 @@ def build_data(cyc_len, d):
         max_node = max_node + d[variable]
     return var2cand
 
-def build_relation(cyc_len, var2cand):
-    #build non-redundent relations based on the candidates, and TODO randomly assign a weight to them
+def build_relation(cyc_len, var2cand, weightrange):
+    #build non-redundent relations based on the candidates, and randomly assign a weight to them
+    #weight is uniformly distributed in (0, weightrange)--can do other distributions later too.
     #there can be multiple ways. I'm doing all to all dense connection now.
     rel2tuple = dict()
+    tuple2weight = dict()
     for variable in range(cyc_len - 1):
         key = "R"+str(variable)
         rel2tuple[key] = set()
@@ -26,6 +31,7 @@ def build_relation(cyc_len, var2cand):
             for tuple1 in var2cand[variable + 1]:
                 #all pair add. Can do other stratergies...
                 rel2tuple[key].add((tuple0, tuple1))
+                tuple2weight[(tuple0, tuple1)] = random.uniform(0, weightrange)
                 print key + ": adding tuple" + str([tuple0, tuple1])
         key = "R" + str(cyc_len - 1)
         rel2tuple[key] = set()
@@ -33,8 +39,9 @@ def build_relation(cyc_len, var2cand):
             for tuple1 in var2cand[0]:
                 # all pair add. Can do other stratergies...
                 rel2tuple[key].add((tuple0, tuple1))
+                tuple2weight[(tuple0, tuple1)] = random.uniform(0, weightrange)
                 print key + ": adding tuple" + str([tuple0, tuple1])
-    return rel2tuple
+    return rel2tuple, tuple2weight
 
 def semi_join(R_start, R_end, rel2tuple):
     print "reduce " + R_start + " according to "+R_end + '...'
@@ -60,13 +67,14 @@ def heavy_map(rel2tuple):
             result[k] = True
     return result
 
+#def priority_search():
 
 
 
 degrees = [1, 1, 3, 1]
 n = sum(degrees)
 var2cand = build_data(4, degrees)
-min_relations = build_relation(4, var2cand)
+min_relations, tuple2weight = build_relation(4, var2cand, weightrange=10)
 min_relations['R1'].add((1, 10)) #adding a spurious tuple
 print "size before semi join reduction: "+str(len(min_relations['R1']))
 semi_join('R1', 'R2', min_relations)
