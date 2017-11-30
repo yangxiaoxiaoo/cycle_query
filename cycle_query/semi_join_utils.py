@@ -4,6 +4,7 @@ import math
 import random
 import heapq
 import globalclass
+import copy
 
 def build_data(cyc_len, d):
     #a hard coded function to create t-cycles, each relations is a tuple of two variables
@@ -115,7 +116,7 @@ def huristic_build_4(tuple2weight, rel2tuple, tu2down_neis):
         for tu_down in tu2down_neis[tu]:
             new_val = tuple2weight[tu_down]
             if (tu, tu_down[1]) in tuple2rem:
-                tuple2rem[(tu, tu_down[1])] = max(tuple2rem[(tu, tu_down[1])], new_val)
+                tuple2rem[(tu, tu_down[1])] = min(tuple2rem[(tu, tu_down[1])], new_val)
             else:
                 tuple2rem[(tu, tu_down[1])] = new_val
     for tu in rel2tuple['R1']:
@@ -123,7 +124,7 @@ def huristic_build_4(tuple2weight, rel2tuple, tu2down_neis):
             new_val = tuple2weight[tu_down]
             for bp in breakpoints:
                 if (tu, bp) in tuple2rem:
-                    tuple2rem[(tu, bp)] = max(tuple2rem[(tu, bp)], tuple2rem[(tu_down, bp)] + new_val)
+                    tuple2rem[(tu, bp)] = min(tuple2rem[(tu, bp)], tuple2rem[(tu_down, bp)] + new_val)
                     #the same breakpoint
                 else:
                     tuple2rem[(tu, bp)] = tuple2rem[(tu_down, bp)] + new_val
@@ -132,7 +133,7 @@ def huristic_build_4(tuple2weight, rel2tuple, tu2down_neis):
             new_val = tuple2weight[tu_down]
             for bp in breakpoints:
                 if (tu, bp) in tuple2rem:
-                    tuple2rem[(tu, bp)] = max(tuple2rem[(tu, bp)], tuple2rem[(tu_down, bp)] + new_val)
+                    tuple2rem[(tu, bp)] = min(tuple2rem[(tu, bp)], tuple2rem[(tu_down, bp)] + new_val)
                     # the same breakpoint
                 else:
                     tuple2rem[(tu, bp)] = tuple2rem[(tu_down, bp)] + new_val
@@ -142,13 +143,47 @@ def huristic_build_4(tuple2weight, rel2tuple, tu2down_neis):
 
 
 
-#TODO: def priority_search(k):
+def priority_search_4( K, rel2tuple, tuple2weight, tu2downneis):
     #push PEIs into a priority queue, pop k heaviest full items
+    #[DESIGN CHOICE] pop the lightest element as consistent with heapq native
+    TOP_K = []
+    PQ = []
+    tuple2rem = huristic_build_4(tuple2weight, rel2tuple, tu2down_neis)
+    for tu in rel2tuple['R0']:
+        heapq.heappush(PQ, globalclass.PEI(tu, tuple2weight[tu], tuple2rem[(tu, tu[0])]))
+        print "PQpush"
+    while len(PQ) != 0:
+        #defult: without termination, enumerate till PQ is empty
+        cur_PEI = heapq.heappop(PQ)
+        if cur_PEI.instance.completion:
+            TOP_K.append(cur_PEI)
+            if len(TOP_K) == K:
+                break
+        elif cur_PEI.instance.length != 3: #not completed, there is frontier, no need to check breakpoint
+            frontier = cur_PEI.instance.frontier()
+            for neighbor in tu2down_neis[frontier]:
+                new_PEI = copy.deepcopy(cur_PEI)
+                new_PEI.merge(neighbor, tuple2weight, rel2tuple, tuple2rem)
+                heapq.heappush(PQ, new_PEI)
+                #[DESIGN CHOICE] shall we keep the top 1 unpushed (outside always)?
+                #slightly more wordy to implement so I will defer this dicision later
+        else: #length == 3, check breakpoint
+            frontier = cur_PEI.instance.frontier()
+            for neighbor in tu2down_neis[frontier]:
+                if neighbor[1] == cur_PEI.breakpoint:
+                    new_PEI = copy.deepcopy(cur_PEI)
+                    new_PEI.merge(neighbor, tuple2weight, rel2tuple, tuple2rem)
+                    heapq.heappush(PQ, new_PEI)
+                    #[DESIGN CHOICE] for more readable logic, no additional break here (extra push in heapQ)
+
+    print "TOP K results are"
+    for PEI in TOP_K:
+        print PEI.wgt
+    print TOP_K
+    return TOP_K
 
 
-
-
-degrees = [1, 1, 3, 1]
+degrees = [2, 1, 3, 1]
 n = sum(degrees)
 var2cand = build_data(4, degrees)
 min_relations, tuple2weight = build_relation(4, var2cand, weightrange=10)
@@ -161,3 +196,5 @@ print "test message again"
 
 tu2down_neis, tu2up_neis = full_SJ_reduce_4(min_relations)
 tuple2rem = huristic_build_4(tuple2weight, min_relations, tu2down_neis)
+
+priority_search_4(100, min_relations, tuple2weight, tu2down_neis)
