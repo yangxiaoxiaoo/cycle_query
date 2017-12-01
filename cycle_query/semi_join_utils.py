@@ -143,12 +143,13 @@ def huristic_build_4(tuple2weight, rel2tuple, tu2down_neis):
 
 
 
-def priority_search_4( K, rel2tuple, tuple2weight, tu2downneis):
+def priority_search_4(K, rel2tuple, tuple2weight, tu2down_neis):
     #push PEIs into a priority queue, pop k heaviest full items
     #[DESIGN CHOICE] pop the lightest element as consistent with heapq native
     TOP_K = []
     PQ = []
     tuple2rem = huristic_build_4(tuple2weight, rel2tuple, tu2down_neis)
+    #for fair time measurement sake, tuple2rem should be part of prioritized search.
     for tu in rel2tuple['R0']:
         heapq.heappush(PQ, globalclass.PEI(tu, tuple2weight[tu], tuple2rem[(tu, tu[0])]))
         print "PQpush"
@@ -179,22 +180,51 @@ def priority_search_4( K, rel2tuple, tuple2weight, tu2downneis):
     print "TOP K results are"
     for PEI in TOP_K:
         print PEI.wgt
-    print TOP_K
+    return TOP_K
+
+def enumerate_all_4(K, rel2tuple, tuple2weight, tu2down_neis):
+    #the enumeration baseline to compare with, implemented by regular join
+    TOP_K = []
+    Interm_results = []
+    fake_tuple2rem = ...#TODO: map all tuple to 0, only record starting point
+    for tu in rel2tuple['R0']:
+        Interm_results.append(globalclass.PEI(tu, tuple2weight[tu], 0))
+        #all instances have 0 heuristics, therefore if there is a comparison is by wgt only.
+        #ALSO, Comp is not needed.
+    while len(Interm_results) != 0:
+        for Inter_res in Interm_results:
+            frontier = Inter_res.instance.frontier()
+            for neighbor in tu2down_neis[frontier]:
+                new_PEI = copy.deepcopy(Inter_res)
+                new_PEI.merge(neighbor, tuple2weight, rel2tuple, fake_tuple2rem)
+                if new_PEI.instance.completion:
+                    TOP_K.append(new_PEI)
+                else:
+                    Interm_results.append(new_PEI)
+    TOP_K.sort()
     return TOP_K
 
 
-degrees = [2, 1, 3, 1]
-n = sum(degrees)
-var2cand = build_data(4, degrees)
-min_relations, tuple2weight = build_relation(4, var2cand, weightrange=10)
-min_relations['R1'].add((1, 10)) #adding a spurious tuple
-print "size before semi join reduction: "+str(len(min_relations['R1']))
-tu2down_neis0, tu2up_neis0 = semi_join('R1', 'R2', min_relations)
-print "size after semi join reduction: "+str(len(min_relations['R1']))
-print heavy_map(min_relations)
-print "test message again"
+def test_priority_search():
+    #For now, without a heavy/light method, we just always assume R0 is heavy, without loss of generality.
+    degrees = [2, 1, 3, 1]
+    n = sum(degrees)
+    var2cand = build_data(4, degrees)
+    min_relations, tuple2weight = build_relation(4, var2cand, weightrange=10)
+    min_relations['R1'].add((1, 10)) #adding a spurious tuple
+    print "size before semi join reduction: "+str(len(min_relations['R1']))
+    tu2down_neis0, tu2up_neis0 = semi_join('R1', 'R2', min_relations)
+    print "size after semi join reduction: "+str(len(min_relations['R1']))
+    print heavy_map(min_relations)
+    print "test message again"
 
-tu2down_neis, tu2up_neis = full_SJ_reduce_4(min_relations)
-tuple2rem = huristic_build_4(tuple2weight, min_relations, tu2down_neis)
+    tu2down_neis, tu2up_neis = full_SJ_reduce_4(min_relations)
+    tuple2rem = huristic_build_4(tuple2weight, min_relations, tu2down_neis)
+    priority_search_4(100, min_relations, tuple2weight, tu2down_neis)
 
-priority_search_4(100, min_relations, tuple2weight, tu2down_neis)
+def time_measurements():
+    print "comparing running time of prioritied search and emumerate all"
+
+
+if __name__ == "__main__":
+    test_priority_search()
