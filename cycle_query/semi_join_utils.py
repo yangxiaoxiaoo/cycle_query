@@ -107,6 +107,27 @@ def heavy_map(rel2tuple):
             result[k] = True
     return result
 
+def real_heavy_map(tu2down_neis, tu2up_neis):
+    #take a tuple to neighbors map(up stream and down stream)
+    tu2degree = dict()
+    tu2is_heavy = dict()
+    for tu in tu2down_neis:
+        tu2degree[tu] = len(tu2down_neis[tu]) + len(tu2up_neis[tu])
+    n = len(tu2down_neis)
+    print "n is"
+    print n
+    print math.sqrt(n)
+    for key, value in tu2degree.iteritems():
+        if value < math.sqrt(n):
+            tu2is_heavy[key] = False
+        else:
+            tu2is_heavy[key] = True
+            print "heavy value:"
+            print value
+    print tu2is_heavy
+    return tu2is_heavy
+
+
 
 def heuristic_build_4(tuple2weight, rel2tuple, tu2down_neis):
     # build a dictionary from (tuple, breakpoint) down to the remaining weight not including tuple
@@ -236,7 +257,7 @@ def enumerate_all_4(K, rel2tuple, tuple2weight, tu2down_neis):
 
 def test_priority_search():
     # For now, without a heavy/light method, we just always assume R0 is heavy, without loss of generality.
-    degrees = [2, 1, 3, 1]
+    degrees = [1, 2, 2, 1]
     var2cand = build_data(4, degrees)
     min_relations, tuple2weight = build_relation(4, var2cand, weightrange=10)
     min_relations['R1'].add((1, 10)) # adding a spurious tuple
@@ -247,9 +268,10 @@ def test_priority_search():
     print "test message again"
 
     tu2down_neis, tu2up_neis = full_SJ_reduce_4(min_relations)
+    real_heavy_map(tu2down_neis, tu2up_neis)
     tuple2rem = heuristic_build_4(tuple2weight, min_relations, tu2down_neis)
-    TOP_K_PQ = priority_search_4(100, min_relations, tuple2weight, tu2down_neis)
-    TOP_K_enu, total = enumerate_all_4(100, min_relations, tuple2weight, tu2down_neis)
+    TOP_K_PQ = priority_search_4(5, min_relations, tuple2weight, tu2down_neis)
+    TOP_K_enu, total = enumerate_all_4(5, min_relations, tuple2weight, tu2down_neis)
     assert TOP_K_enu == TOP_K_PQ
 
 
@@ -278,5 +300,5 @@ def time_measurements(degrees, K):
 
 if __name__ == "__main__":
     test_priority_search()
-    time_measurements([20, 4, 7, 10], 100)
-  #  time_measurements([20, 4, 7, 10], 10000)
+    # time_measurements([20, 4, 7, 10], 100)
+    # time_measurements([20, 4, 7, 10], 10000)
