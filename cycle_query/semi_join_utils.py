@@ -94,7 +94,12 @@ def full_SJ_reduce_4(rel2tuple):
     # [DESIGN CHOICE]A: No since we will need the hash to neighbors anyway later to expend PEI
 
 
-def heavy_map(rel2tuple):
+def full_SJ_reduce_split_4(rel2tuple, split_rel2tuple):
+    # reduce into triple I1 and I2 for different instances
+    # for those x0 in heavy R0,
+
+
+def heavy_map_v0(rel2tuple):
     # take a tuple candidate map, return a map to boolean values indicating each relation is heavy or not
     n = 0
     result = dict()
@@ -107,7 +112,8 @@ def heavy_map(rel2tuple):
             result[k] = True
     return result
 
-def real_heavy_map(tu2down_neis, tu2up_neis):
+
+def heavy_map_v1(tu2down_neis, tu2up_neis):
     #take a tuple to neighbors map(up stream and down stream)
     tu2degree = dict()
     tu2is_heavy = dict()
@@ -127,6 +133,30 @@ def real_heavy_map(tu2down_neis, tu2up_neis):
     print tu2is_heavy
     return tu2is_heavy
 
+
+def group_by_heavy_4(rel2tuple, n):
+    # take a relation to tuple mapping, group R0 on x0's heaviness, then group R2 on x2's heaviness
+    # put the R0 tuple in R0H if x0 is heavy in R0(x0, x1), R0L elsewhere.
+    # Put the R2 tuple in R2H if x2 is heavy in R2(x2, x3), R2L elsewhere.
+    additional_dict = {'R0H': set(), 'R0L': set(), 'R2H': set(), 'R2L': set()}
+    x02count = dict()
+    x22count = dict()
+    for tu in rel2tuple['R0']:
+        if tu[0] in x02count:
+            x02count[tu[0]] += 1
+        else:
+            x02count[tu[0]] = 1
+    for tu in rel2tuple['R0']:
+        if x02count[tu[0]] > math.sqrt(n):
+            additional_dict['R0H'].add(tu)
+        else:
+            additional_dict['R0L'].add(tu)
+    for tu in rel2tuple['R2']:
+        if x22count[tu[0]] > math.sqrt(n):
+            additional_dict['R2H'].add(tu)
+        else:
+            additional_dict['R2L'].add(tu)
+    return additional_dict
 
 
 def heuristic_build_4(tuple2weight, rel2tuple, tu2down_neis):
@@ -222,6 +252,8 @@ def priority_search_4(K, rel2tuple, tuple2weight, tu2down_neis):
     return TOP_K
 
 
+
+
 def enumerate_all_4(K, rel2tuple, tuple2weight, tu2down_neis):
     # the enumeration baseline to compare with, implemented by regular join.
     # also return a total count
@@ -264,11 +296,11 @@ def test_priority_search():
     print "size before semi join reduction: "+str(len(min_relations['R1']))
     tu2down_neis0, tu2up_neis0 = semi_join('R1', 'R2', min_relations)
     print "size after semi join reduction: "+str(len(min_relations['R1']))
-    print heavy_map(min_relations)
+    print heavy_map_v0(min_relations)
     print "test message again"
 
     tu2down_neis, tu2up_neis = full_SJ_reduce_4(min_relations)
-    real_heavy_map(tu2down_neis, tu2up_neis)
+    heavy_map_v1(tu2down_neis, tu2up_neis)
     tuple2rem = heuristic_build_4(tuple2weight, min_relations, tu2down_neis)
     TOP_K_PQ = priority_search_4(5, min_relations, tuple2weight, tu2down_neis)
     TOP_K_enu, total = enumerate_all_4(5, min_relations, tuple2weight, tu2down_neis)
@@ -296,6 +328,13 @@ def time_measurements(degrees, K):
     print time_PQ
     print time_enu
     return time_PQ, time_enu
+
+
+def test_split_plan():
+    degrees = [1, 2, 2, 1]
+    var2cand = build_data(4, degrees)
+    rel2tuple, tuple2weight = build_relation(4, var2cand, weightrange=10)
+    split_rel2tuple = group_by_heavy_4(rel2tuple, n=2)
 
 
 if __name__ == "__main__":
