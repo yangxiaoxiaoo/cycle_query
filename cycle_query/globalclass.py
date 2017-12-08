@@ -88,7 +88,7 @@ class PE_tree():
         self.completion = False
         if query_type == 1:
             self.x2, self.x3, self.x0 = Ix2
-            print breakpair2maxweight
+            # print breakpair2maxweight
             self.hrtc = breakpair2maxweight[(self.x2, self.x0)]
         elif query_type == 2:
             self.x0, self.x1, self.x2 = Ix2
