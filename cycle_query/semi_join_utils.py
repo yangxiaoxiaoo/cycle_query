@@ -93,10 +93,113 @@ def full_SJ_reduce_4(rel2tuple):
     # [DESIGN CHOICE]Q: shall we omit this and record a hash to max item only?
     # [DESIGN CHOICE]A: No since we will need the hash to neighbors anyway later to expend PEI
 
+def join(R_start, R_end): # TODO
+    # [DESIGN CHOICE] be careful about the 3-variable tuple order
+    # this function takes R_start(x0, x1) join with (x1, x2) output (x0, x1, x2)
+    x1_in_Rend = set([])
+    result = set()
 
-def full_SJ_reduce_split_4(rel2tuple, split_rel2tuple):
-    # reduce into triple I1 and I2 for different instances
-    # for those x0 in heavy R0,
+    return result
+
+def semi_join_pos(R_start, R_end, pos_1, pos_2): # TODO
+    # return a new set of R_start such that pos_1 in R_start is in pos_2 in R_end
+    result = set()
+
+    return result
+
+def SJ_split_heuristic_4(rel2tuple, split_rel2tuple, tuple2weight):
+    # reduce into triple I1 and then I2 for different instances
+    # Q1: I11, I12; Q2: I21, I22; Q3: I31, I32
+    # create a map from breakpairs to (a list of Ix1 tuples, max weight of such Ix1 tuples)
+    # breakpoints is (x2, x0) for I11, (x0, x2) for I21, (x1, x3) for I31
+    intermid2tuple = {'I11':set(), 'I12':set(), 'I21':set(), 'I22':set(), 'I31':set(), 'I32':set()}
+    intertuple2weight = dict()  # mapping an instance of Ix1 or Ix2 to its weight
+    breakpair2tuples = dict()
+    breakpair2maxweight = dict()
+    rel2tuple.update(split_rel2tuple)
+
+    # create I11
+    intermid2tuple['I11'] = join(rel2tuple['R0H'], rel2tuple['R1']) # TODO: make sure that I1x are ordered consistently!
+    for (x0, x1, x2) in intermid2tuple['I11']:
+        cur_wgt = tuple2weight[(x0, x1)] + tuple2weight[(x1, x2)]
+        intertuple2weight[(x0, x1, x2)] = cur_wgt
+        if (x2, x0) not in breakpair2tuples:
+            breakpair2tuples[(x2, x0)] = {(x0, x1, x2)}
+            breakpair2maxweight[(x2, x0)] = cur_wgt
+        else:
+            breakpair2tuples[(x2, x0)].add((x0, x1, x2))
+            breakpair2maxweight[(x2, x0)] = max(breakpair2maxweight[(x2, x0)], cur_wgt)
+    # create I21
+    intermid2tuple['I21'] = join(rel2tuple['R2H'], rel2tuple['R3'])  # TODO: make sure that I1x are ordered consistently!
+    for (x2, x3, x0) in intermid2tuple['I21']:
+        cur_wgt = tuple2weight[(x2, x3)] + tuple2weight[(x3, x0)]
+        intertuple2weight[(x2, x3, x0)] = cur_wgt
+        if (x0, x2) not in breakpair2tuples:
+            breakpair2tuples[(x0, x2)] = {(x2, x3, x0)}
+            breakpair2maxweight[(x2, x0)] = cur_wgt
+        else:
+            breakpair2tuples[(x0, x2)].add((x2, x3, x0))
+            breakpair2maxweight[(x0, x2)] = max(breakpair2maxweight[(x0, x2)], cur_wgt)
+    # create I31
+    intermid2tuple['I31'] = join(rel2tuple['R3'], rel2tuple['R1L'])  # TODO: make sure that I1x are ordered consistently!
+    for (x3, x0, x1) in intermid2tuple['I31']:
+        cur_wgt = tuple2weight[(x3, x0)] + tuple2weight[(x0, x1)]
+        intertuple2weight[(x3, x0, x1)] = cur_wgt
+        if (x1, x3) not in breakpair2tuples:
+            breakpair2tuples[(x1, x3)] = {(x3, x0, x1)}
+            breakpair2maxweight[(x1, x3)] = cur_wgt
+        else:
+            breakpair2tuples[(x1, x3)].add((x3, x0, x1))
+            breakpair2maxweight[(x1, x3)] = max(breakpair2maxweight[(x1, x3)], cur_wgt)
+    # create I12
+    R31 = semi_join_pos(rel2tuple['R3'], intermid2tuple['I11'], 1, 0)
+    R21 = semi_join_pos(rel2tuple['R2'], intermid2tuple['I11'], 0, 2)
+    intermid2tuple['I12'] = join(R21, R31)
+    # create I22
+    R01 = semi_join_pos(rel2tuple['R0'], intermid2tuple['I21'], 0, 2)
+    R11 = semi_join_pos(rel2tuple['R1'], intermid2tuple['I21'], 1, 0)
+    # create I32
+    R11 = semi_join_pos(rel2tuple['R1'], intermid2tuple['I31'], 0, 2)
+    R21 = semi_join_pos(rel2tuple['R2'], intermid2tuple['I31'], 1, 0)
+
+    return intermid2tuple, intertuple2weight, breakpair2tuples, breakpair2maxweight
+
+
+def P_search_decom_tree(K, intermid2tuple, intertuple2weight, breakpair2tuples, breakpair2maxweight):
+    # prioritized search on decompsed trees. In this case from
+    PQ = []
+    TOP_K = []
+    for I12 in intermid2tuple['I12']:
+        heapq.heappush(PQ, globalclass.PE_tree(I12, intertuple2weight[I12], 1, breakpair2maxweight))
+    for I22 in intermid2tuple['I22']:
+        heapq.heappush(PQ, globalclass.PE_tree(I22, intertuple2weight[I22], 2, breakpair2maxweight))
+    for I32 in intermid2tuple['I32']:
+        heapq.heappush(PQ, globalclass.PE_tree(I32, intertuple2weight[I32], 3, breakpair2maxweight))
+    while len(PQ) != 0:
+        cur_PET = heapq.heappop(PQ)
+        if cur_PET.comletion:
+            TOP_K.append(cur_PET)
+            if len(TOP_K) == K:
+                break
+        else:
+            if cur_PET.query_type == 1:
+                breakpair = (cur_PET.x2, cur_PET.x0)
+            elif cur_PET.query_type == 2:
+                breakpair = (cur_PET.x0, cur_PET.x2)
+            else:
+                assert cur_PET.query_type == 3
+                breakpair = (cur_PET.x1, cur_PET.x3)
+            for Ix1 in breakpair2tuples[breakpair]:
+                new_PET = copy.deepcopy(cur_PET)
+                new_PET.merge(Ix1, intertuple2weight[Ix1])
+                heapq.heappush(PQ, new_PET)
+    print "TOP K results are"
+    for PET in TOP_K:
+        print PET.wgt
+    return TOP_K
+
+
+
 
 
 def heavy_map_v0(rel2tuple):
