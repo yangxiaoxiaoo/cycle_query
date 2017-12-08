@@ -22,44 +22,6 @@ class PEI():
         self.wgt += tuple2weight[new_tuple]
         self.hrtc = self.instance.max_wgt_rem(tuple2rem, self.breakpoint)
 
-class PE_tree():
-    # class of partially explored tree instance, for tree decomposition of cycle
-    def __init__(self, Ix2, wgt, query_type, breakpair2maxweight):
-        # if query_type == 1, I12(x0,x2,x3)
-        self.query_type = query_type
-        self.wgt = wgt
-        self.completion = False
-        if query_type == 1:
-            self.x0, self.x2, self.x3 = Ix2
-            self.hrtc = breakpair2maxweight[(self.x2, self.x0)]
-        elif query_type == 2:
-            self.x0, self.x1, self.x2 = Ix2
-            self.hrtc = breakpair2maxweight[(self.x0, self.x2)]
-            # [DESIGN CHOICE]reversed order to distinguish type 1 and type 2. clockwise.
-        else:
-            assert query_type == 3
-            self.x1, self.x2, self.x3 = Ix2
-            self.hrtc = breakpair2maxweight[(self.x1, self.x3)]
-
-    def __gt__(self, other):
-        return (self.wgt + self.hrtc) > (other.wgt + other.hrtc)
-
-    def __eq__(self, other):
-        return (self.wgt + self.hrtc) == (other.wgt + other.hrtc)
-
-    def merge(self, Ix1, wgt):
-        # take an Ix1 tuple and its weight and merge to current Ix2, update total weight
-        if self.query_type == 1:
-            self.x1 = Ix1[1]
-        elif self.query_type == 2:
-            self.x3 = Ix1[2]
-        else:
-            assert self.query_type == 3
-            self.x0 = Ix1[0]
-        self.wgt += wgt
-        self.hrtc = 0
-        self.completion = True
-
 
 class cycle_instance():
     # will need to extend later to support generic tree case,
@@ -114,3 +76,44 @@ class cycle_instance():
             return tuple2rem[(self.R1, a)]
         if self.length == 1:
             return tuple2rem[(self.R0, a)]
+
+
+@functools.total_ordering
+class PE_tree():
+    # class of partially explored tree instance, for tree decomposition of cycle
+    def __init__(self, Ix2, wgt, query_type, breakpair2maxweight):
+        # if query_type == 1, I12(x0,x2,x3)
+        self.query_type = query_type
+        self.wgt = wgt
+        self.completion = False
+        if query_type == 1:
+            self.x2, self.x3, self.x0 = Ix2
+            print breakpair2maxweight
+            self.hrtc = breakpair2maxweight[(self.x2, self.x0)]
+        elif query_type == 2:
+            self.x0, self.x1, self.x2 = Ix2
+            self.hrtc = breakpair2maxweight[(self.x0, self.x2)]
+            # [DESIGN CHOICE]reversed order to distinguish type 1 and type 2. clockwise.
+        else:
+            assert query_type == 3
+            self.x1, self.x2, self.x3 = Ix2
+            self.hrtc = breakpair2maxweight[(self.x1, self.x3)]
+
+    def __gt__(self, other):
+        return (self.wgt + self.hrtc) > (other.wgt + other.hrtc)
+
+    def __eq__(self, other):
+        return (self.wgt + self.hrtc) == (other.wgt + other.hrtc)
+
+    def merge(self, Ix1, wgt):
+        # take an Ix1 tuple and its weight and merge to current Ix2, update total weight
+        if self.query_type == 1:  # checked consistence with I11
+            self.x1 = Ix1[1]
+        elif self.query_type == 2:
+            self.x3 = Ix1[1]  # checked consistence with I21
+        else:
+            assert self.query_type == 3
+            self.x0 = Ix1[1]  # checked consistence with I31
+        self.wgt += wgt
+        self.hrtc = 0
+        self.completion = True
