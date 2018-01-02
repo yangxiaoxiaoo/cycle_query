@@ -16,12 +16,22 @@ class PEI():
     def __eq__(self, other):
         return (self.wgt + self.hrtc) == (other.wgt + other.hrtc)
 
-    def merge(self, new_tuple, tuple2weight, rel2tuple, tuple2rem):
+    def merge(self, new_tuple, tuple2weight, tuple2rem):
         # merge this partially explored tree with newly added relation
         self.instance.insert_relation(new_tuple)
         self.wgt += tuple2weight[new_tuple]
         self.hrtc = self.instance.max_wgt_rem(tuple2rem, self.breakpoint)
 
+    def mergable(self, new_tuple, tuple2rem):
+        # check if this new relation can be added
+        # if adding the relation, it's guaranteed that a cycle won't form
+        # then return False, else return true.
+        return (new_tuple, self.breakpoint) in tuple2rem
+
+#class PET():
+    # class of partially explored trees, compared by explored part weight+ unexplored part extimation
+ #   def __init__(self):
+  #      self.wgt = 0
 
 class cycle_instance():
     # will need to extend later to support generic tree case,

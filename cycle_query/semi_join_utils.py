@@ -34,7 +34,7 @@ def build_relation(cyc_len, var2cand, weightrange):
         rel2tuple[key] = set()
         for tuple0 in var2cand[variable]:
             maxdegree = len(var2cand[variable + 1])
-            chosendegree = random.randint(maxdegree/2, maxdegree)
+            chosendegree = random.randint(1, maxdegree)
             count = 0
             for tuple1 in var2cand[variable + 1]:
                 # bound the degree into chosendegree
@@ -85,6 +85,14 @@ def semi_join(R_start, R_end, rel2tuple):
     rel2tuple[R_start] = new_set
     return tu2down_neis, tu2up_neis
 
+def semi_join_reverse(R_start, R_end, rel2tuple):
+    get_second_ele = lambda (x0, x1): x1
+    checkset = set((get_second_ele(tup) for tup in rel2tuple[R_start]))
+    new_set = set()
+    for tup in rel2tuple[R_end]:
+        if tup[0] in checkset:
+            new_set.add(tup)
+    rel2tuple[R_end] = new_set
 
 def full_SJ_reduce_4(rel2tuple):
     #TODO: correct it, add bottom-up swipe for baselines use
@@ -92,6 +100,17 @@ def full_SJ_reduce_4(rel2tuple):
     # contain hard code for 4-cycle and will rewrite later...
     # semi-join reduction for all relations, and return an index from tuple to downstream and upstream neighbors
     # No global consistency: R0 to upstream and R0 to downstream
+    '''
+    print "before"
+    print rel2tuple
+    semi_join_reverse('R3', 'R0', rel2tuple)
+    semi_join_reverse('R2', 'R3', rel2tuple)
+    semi_join_reverse('R1', 'R2', rel2tuple)
+    semi_join_reverse('R0', 'R1', rel2tuple)
+    semi_join_reverse('R3', 'R0', rel2tuple)
+    print "after"
+    print rel2tuple
+    '''
     tu2down_neis, tu2up_neis = semi_join('R0', 'R1', rel2tuple)
     tu2down_neis1, tu2up_neis1 = semi_join('R1', 'R2', rel2tuple)
     tu2up_neis.update(tu2up_neis1)
@@ -100,9 +119,9 @@ def full_SJ_reduce_4(rel2tuple):
     tu2up_neis.update(tu2up_neis1)
     tu2down_neis.update(tu2down_neis1)
     tu2down_neis1, tu2up_neis1 = semi_join('R3', 'R0', rel2tuple)
-    # print tu2down_neis1
     tu2up_neis.update(tu2up_neis1)
     tu2down_neis.update(tu2down_neis1)
+   # tu2down_neis1, tu2up_neis1 = semi_join('R0', 'R1', rel2tuple)
 
     # print tu2down_neis
     return tu2down_neis, tu2up_neis
@@ -310,19 +329,24 @@ def heuristic_build_4(tuple2weight, rel2tuple, tu2down_neis):
             new_val = tuple2weight[tu_down]
             for bp in breakpoints:
                 if (tu, bp) in tuple2rem:
-                    tuple2rem[(tu, bp)] = min(tuple2rem[(tu, bp)], tuple2rem[(tu_down, bp)] + new_val)
-                    # the same breakpoint
+                    if (tu_down, bp) in tuple2rem:
+                        tuple2rem[(tu, bp)] = min(tuple2rem[(tu, bp)], tuple2rem[(tu_down, bp)] + new_val)
+                    # else: do no updates on tuple2rem
+                    # check to make sure it is the same breakpoint
                 else:
-                    tuple2rem[(tu, bp)] = tuple2rem[(tu_down, bp)] + new_val
+                    if (tu_down, bp) in tuple2rem:  # 1/2/18: can't assume tu_down is always in
+                        tuple2rem[(tu, bp)] = tuple2rem[(tu_down, bp)] + new_val
     for tu in rel2tuple['R0']:
         for tu_down in tu2down_neis[tu]:
             new_val = tuple2weight[tu_down]
             for bp in breakpoints:
                 if (tu, bp) in tuple2rem:
-                    tuple2rem[(tu, bp)] = min(tuple2rem[(tu, bp)], tuple2rem[(tu_down, bp)] + new_val)
+                    if (tu_down, bp) in tuple2rem:
+                        tuple2rem[(tu, bp)] = min(tuple2rem[(tu, bp)], tuple2rem[(tu_down, bp)] + new_val)
                     # the same breakpoint
                 else:
-                    tuple2rem[(tu, bp)] = tuple2rem[(tu_down, bp)] + new_val
+                    if (tu_down, bp) in tuple2rem:
+                        tuple2rem[(tu, bp)] = tuple2rem[(tu_down, bp)] + new_val
     # print "(tuple, breakpoint) to remaining heuristic value mapping:"
     # print tuple2rem
     return tuple2rem
@@ -348,8 +372,9 @@ def priority_search_4(K, rel2tuple, tuple2weight, tu2down_neis):
     tuple2rem = heuristic_build_4(tuple2weight, rel2tuple, tu2down_neis)
     # for fair time measurement sake, tuple2rem should be part of prioritized search.
     for tu in rel2tuple['R0']:
-        heapq.heappush(PQ, globalclass.PEI(tu, tuple2weight[tu], tuple2rem[(tu, tu[0])]))
-        # print "PQpush"
+        if (tu, tu[0]) in tuple2rem:
+            heapq.heappush(PQ, globalclass.PEI(tu, tuple2weight[tu], tuple2rem[(tu, tu[0])]))
+            # print "PQpush"
     while len(PQ) != 0:
         # defult: without termination, enumerate till PQ is empty
         cur_PEI = heapq.heappop(PQ)
@@ -360,17 +385,18 @@ def priority_search_4(K, rel2tuple, tuple2weight, tu2down_neis):
         elif cur_PEI.instance.length != 3: # not completed, there is frontier, no need to check breakpoint
             frontier = cur_PEI.instance.frontier()
             for neighbor in tu2down_neis[frontier]:
-                new_PEI = copy.deepcopy(cur_PEI)
-                new_PEI.merge(neighbor, tuple2weight, rel2tuple, tuple2rem)
-                heapq.heappush(PQ, new_PEI)
-                # [DESIGN CHOICE] shall we keep the top 1 unpushed (outside always)?
-                # slightly more wordy to implement so I will defer this dicision later
+                if cur_PEI.mergable(neighbor, tuple2rem):
+                    new_PEI = copy.deepcopy(cur_PEI)
+                    new_PEI.merge(neighbor, tuple2weight, tuple2rem)
+                    heapq.heappush(PQ, new_PEI)
+                    # [DESIGN CHOICE] shall we keep the top 1 unpushed (outside always)?
+                    # slightly more wordy to implement so I will defer this dicision later
         else:  # length == 3, check breakpoint
             frontier = cur_PEI.instance.frontier()
             for neighbor in tu2down_neis[frontier]:
                 if neighbor[1] == cur_PEI.breakpoint:
                     new_PEI = copy.deepcopy(cur_PEI)
-                    new_PEI.merge(neighbor, tuple2weight, rel2tuple, tuple2rem)
+                    new_PEI.merge(neighbor, tuple2weight, tuple2rem)
                     heapq.heappush(PQ, new_PEI)
                     # [DESIGN CHOICE] for more readable logic, no additional break here (extra push in heapQ)
 
@@ -395,10 +421,11 @@ def enumerate_all_4(K, rel2tuple, tuple2weight, tu2down_neis):
         Inter_res = Interm_results.pop()
         frontier = Inter_res.instance.frontier()
         for neighbor in tu2down_neis[frontier]:
-            if (Inter_res.instance.length == 3 and neighbor[1] == Inter_res.breakpoint) \
-                    or Inter_res.instance.length < 3:
+            if ((Inter_res.instance.length == 3 and neighbor[1] == Inter_res.breakpoint) \
+                    or Inter_res.instance.length < 3) \
+                    and Inter_res.mergable(neighbor, fake_tuple2rem):
                 new_PEI = copy.deepcopy(Inter_res)
-                new_PEI.merge(neighbor, tuple2weight, rel2tuple, fake_tuple2rem)
+                new_PEI.merge(neighbor, tuple2weight, fake_tuple2rem)
                 if new_PEI.instance.completion:
                     TOP_K.append(new_PEI)
                     if len(TOP_K) == K:
@@ -426,10 +453,13 @@ def test_priority_search():
 
     tu2down_neis, tu2up_neis = full_SJ_reduce_4(min_relations)
 #    heavy_map_v1(tu2down_neis, tu2up_neis)
-#    tuple2rem = heuristic_build_4(tuple2weight, min_relations, tu2down_neis)
-#    TOP_K_PQ = priority_search_4(5, min_relations, tuple2weight, tu2down_neis)
-#    TOP_K_enu, total = enumerate_all_4(5, min_relations, tuple2weight, tu2down_neis)
-#    assert TOP_K_enu == TOP_K_PQ
+    tuple2rem = heuristic_build_4(tuple2weight, min_relations, tu2down_neis)
+    TOP_K_PQ = priority_search_4(5, min_relations, tuple2weight, tu2down_neis)
+    TOP_K_enu, total = enumerate_all_4(5, min_relations, tuple2weight, tu2down_neis)
+    print len(TOP_K_enu)
+    print len(TOP_K_PQ)
+    # assert TOP_K_enu == TOP_K_PQ
+    assert (TOP_K_enu[0].wgt - TOP_K_PQ[0].wgt) < 0.0000001
     #TODO: write a correct semi-join for the two baselines
 
     split_rel2tuple = split_by_heavy_4(rel2tuple=min_relations, n=2)
@@ -438,7 +468,7 @@ def test_priority_search():
     TOP_K_select = p_search_decom_tree(5, intermid2tuple, intertuple2weight, breakpair2tuples, breakpair2minweight)
 #    print TOP_K_enu[0].wgt
     print TOP_K_select[0].wgt
-#    assert (TOP_K_enu[0].wgt - TOP_K_select[0].wgt) < 0.0000001
+    assert (TOP_K_enu[0].wgt - TOP_K_select[0].wgt) < 0.0000001
 
 
 def time_measurements(degrees, K):
