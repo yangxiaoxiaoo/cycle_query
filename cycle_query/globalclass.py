@@ -28,10 +28,6 @@ class PEI():
         # then return False, else return true.
         return (new_tuple, self.breakpoint) in tuple2rem
 
-#class PET():
-    # class of partially explored trees, compared by explored part weight+ unexplored part extimation
- #   def __init__(self):
-  #      self.wgt = 0
 
 class cycle_instance():
     # will need to extend later to support generic tree case,
