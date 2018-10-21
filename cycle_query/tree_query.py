@@ -5,7 +5,7 @@ import heapq
 
 
 
-
+'''
 class PET():
     # class that implement a partially explored tree
     # used in the PQ, comparable
@@ -57,6 +57,7 @@ class binary_tree_node():
             return 1
 
 
+'''
 class query():
 
     def __init__(self, template):

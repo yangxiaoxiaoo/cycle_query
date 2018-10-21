@@ -401,8 +401,8 @@ def priority_search_4(K, rel2tuple, tuple2weight, tu2down_neis):
                     # [DESIGN CHOICE] for more readable logic, no additional break here (extra push in heapQ)
 
     print "TOP K results are"
- #   for PEI in TOP_K:
-  #      print PEI.wgt
+    for PEI in TOP_K:
+        print PEI.wgt
     assert len(TOP_K) == K or len(PQ) == 0
     return TOP_K
 
