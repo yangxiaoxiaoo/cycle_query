@@ -162,23 +162,57 @@ def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l):
     assert len(TOP_K) == K or len(PQ) == 0
     return TOP_K
 
+def cycle_rotate(relation2tuple, pos, l):
+    # take the original database relation2tuple dictionary, rotate it by pos downwards in a l-length cycle.
+    # so that the we break at R0[0]
+    new_database = dict()
+    for relation in relation2tuple:
+        original_i = int(relation[1:])
+        new_i = (original_i + (l - pos)) % l
+        # pos = 2, l = 4, 0 -> 2, 1 -> 3, 2->0, 3-> 1
+        # pos = 1, l = 4: R1-> R0, R2-> R1. R3-> R2, R0 -> R3
+        new_database['R'+str(new_i)] = relation2tuple[relation]
+    return new_database
+
+import math
+def l_cycle_database_partition(relation2tuple, l):
+    N = 0
+    for key, value in relation2tuple.iteritems():
+        N = max(N, len(value))
+    delta = math.pow(N, 1/ (math.ceil(l/2)))
+    for relation_index in range(0, l):
+
+
 
 def l_path_sim(l):
-    degrees = [4, 2, 2, 4]
+    degrees = [4, 2, 2, 4, 5]
     var2cand = semi_join_utils.build_data(l, degrees)
     min_relations, tuple2weight = semi_join_utils.build_relation(l, var2cand, weightrange=10)
     tu2down_neis, tu2up_neis = path_SJ_reduce_l(min_relations, l)
     TOP_K_PQ = priority_search_l_path(5, min_relations, tuple2weight, tu2down_neis, l)
 
-def l_cycle_sim(l):
-    degrees = [4, 2, 2, 4]
+def l_cycle_naive(l):
+    degrees = [4, 2, 2, 4, 5]
     var2cand = semi_join_utils.build_data(l, degrees)
     min_relations, tuple2weight = semi_join_utils.build_relation(l, var2cand, weightrange=10)
     tu2down_neis, tu2up_neis = cycle_SJ_reduce_l(min_relations, l)
     TOP_K_PQ = priority_search_l_cycle_naive(5, min_relations, tuple2weight, tu2down_neis, l)
-    TOP_K_PQ2 = semi_join_utils.priority_search_4(5, min_relations, tuple2weight, tu2down_neis)
-    assert TOP_K_PQ == TOP_K_PQ2
+    if l == 4:
+        TOP_K_PQ2 = semi_join_utils.priority_search_4(5, min_relations, tuple2weight, tu2down_neis)
+        assert TOP_K_PQ == TOP_K_PQ2
+
+def l_cycle_split(l):
+    degrees = [4, 2, 2, 4, 5]
+    var2cand = semi_join_utils.build_data(l, degrees)
+    min_relations, tuple2weight = semi_join_utils.build_relation(l, var2cand, weightrange=10)
+    assert min_relations == cycle_rotate(min_relations, l, l)
+    assert min_relations == cycle_rotate(min_relations, 0, l)
+
+    tu2down_neis, tu2up_neis = cycle_SJ_reduce_l(min_relations, l)
+    TOP_K_PQ = priority_search_l_cycle_naive(5, min_relations, tuple2weight, tu2down_neis, l)
+
 
 if __name__ == "__main__":
-    l_path_sim(4)
-    l_cycle_sim(4)
+    l_path_sim(5)
+    l_cycle_naive(5)
+    l_cycle_split(5)
