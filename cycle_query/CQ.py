@@ -176,11 +176,55 @@ def cycle_rotate(relation2tuple, pos, l):
 
 import math
 def l_cycle_database_partition(relation2tuple, l):
+    # split the database, return a list of (l+1) new databases. last one is all light one.
+    partitions = []
     N = 0
     for key, value in relation2tuple.iteritems():
         N = max(N, len(value))
     delta = math.pow(N, 1/ (math.ceil(l/2)))
+
+    heavy_tables = []
+    light_tables = [] # list of l light table sets. use later to construct partitions.
+
+    # split each relation into heavy and light components.
     for relation_index in range(0, l):
+        relation_name = 'R'+str(relation_index)
+        current_relation_tuples = relation2tuple[relation_name]
+        heavy_tuples = set()
+        light_tuples = set()
+        degree_count = dict()
+        for tu in current_relation_tuples:
+            if tu[0] not in degree_count:
+                degree_count[tu[0]] = 1
+            else:
+                degree_count[tu[0]] += 1
+        for tu in current_relation_tuples:
+            if degree_count[tu[0]] < delta:
+                light_tuples.add(tu)
+            else:
+                heavy_tuples.add(tu)
+        # current partition is made of current relation light tuples, combined with remaining relation.
+        heavy_tables.append(heavy_tuples)
+        light_tables.append(light_tuples)
+
+    # use the split components to construct partitions. First l regular partitions, last one "all light" partition.
+    for partition_index in range(0, l):
+        new_partition = dict()
+        for table_index in range(0, partition_index):
+            new_partition['R'+str(table_index)] = light_tables[table_index]
+        new_partition['R' + str(partition_index)] = heavy_tables[partition_index]
+        for table_index in range(partition_index+1, l):
+            new_partition['R' + str(table_index)] = relation2tuple['R'+str(table_index)]
+
+        partitions.append(new_partition)
+
+    #construct the all light one:
+    new_partition = dict()
+    for table_index in range(0, l):
+        new_partition['R' + str(table_index)] = light_tables[table_index]
+    partitions.append(new_partition)
+
+    return partitions
 
 
 
@@ -208,11 +252,19 @@ def l_cycle_split(l):
     assert min_relations == cycle_rotate(min_relations, l, l)
     assert min_relations == cycle_rotate(min_relations, 0, l)
 
+    partitions = l_cycle_database_partition(min_relations, l)
+    for partition_index in range(l):
+        # for first l regular partitions, call naive search.
+        # TODO: But with a global PQ! Currently outputting too much.
+        tu2down_neis, tu2up_neis = cycle_SJ_reduce_l(partitions[partition_index], l)
+        TOP_K_PQ = priority_search_l_cycle_naive(5, cycle_rotate(partitions[partition_index], partition_index, l), tuple2weight, tu2down_neis, l)
+        # TODO: add what to do for the all light case.
+
     tu2down_neis, tu2up_neis = cycle_SJ_reduce_l(min_relations, l)
     TOP_K_PQ = priority_search_l_cycle_naive(5, min_relations, tuple2weight, tu2down_neis, l)
 
 
 if __name__ == "__main__":
-    l_path_sim(5)
-    l_cycle_naive(5)
+    #l_path_sim(5)
+    #l_cycle_naive(5)
     l_cycle_split(5)
