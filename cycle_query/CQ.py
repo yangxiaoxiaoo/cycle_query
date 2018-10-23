@@ -279,14 +279,14 @@ def l_cycle_naive(l, k):
         TOP_K_PQ2 = semi_join_utils.priority_search_4(k, min_relations, tuple2weight, tu2down_neis)
         assert TOP_K_PQ == TOP_K_PQ2
 
-def l_cycle_split(l, k):
+def l_cycle_split(l, k, test):
     attr_card = [2, 2, 2, 2, 2]
     var2cand = semi_join_utils.build_data(l, attr_card)
     min_relations, tuple2weight = semi_join_utils.build_relation(l, var2cand, weightrange=10)
     assert min_relations == cycle_rotate(min_relations, l, l)
     assert min_relations == cycle_rotate(min_relations, 0, l)
 
-    if l == 4:
+    if l == 4  and test:
         tu2down_neis4, tu2up_neis4 = semi_join_utils.full_SJ_reduce_4(min_relations)
         TOP_K_PQ2 = semi_join_utils.priority_search_4(k, min_relations, tuple2weight, tu2down_neis4)
 
@@ -327,7 +327,6 @@ def l_cycle_split(l, k):
 
         if head_values[top_pos] == 99999999:  # another way to tell all empty..
             break
-
         next_result = priority_search_l_cycle_naive_next \
             (tuple2weight, tu2down_neis_list[top_pos], l, small_PQ_list[top_pos], tuple2rem_list[top_pos])
         if isinstance(next_result, globalclass.PEI_cycle):  # when there is no next, maybe nontype.
@@ -362,7 +361,7 @@ def l_cycle_split(l, k):
         print PEI.wgt
 
 
-    if l == 4:
+    if l == 4 and test:
         if TOP_K != TOP_K_PQ2:
             print "rotation caused index off, ignore for now since we only need the weights"
 
@@ -373,4 +372,4 @@ def l_cycle_split(l, k):
 if __name__ == "__main__":
     #l_path_sim(5, 3)
     #l_cycle_naive(5, 3)
-    l_cycle_split(4, 10)
+    l_cycle_split(5, 10, test=False)
