@@ -86,6 +86,30 @@ class PEI_cycle():
         return (new_tuple, self.breakpoint) in tuple2rem
 
 
+
+@functools.total_ordering
+class PEI_lightcycle(PEI_cycle):
+    # the right way to call __init__:
+    # PEI_lightcycle(I1_list[0], 0, 0, l)
+    # leave hrtc to the call of biginit.
+
+    #hrtc is the best I2's weight to this I1_list (a list of all tuples in this I1 instance).
+    def biginit(self, I1_list, I1_wgt, hrtc, l):
+        for tuple in I1_list[1:]:
+            self.instance.insert_relation(tuple)
+        self.wgt = I1_wgt
+        self.hrtc = hrtc
+        self.goal_length = l
+        self.breakpointpair = (I1_list[0][0], I1_list[-1][1])
+
+    def bigmerge(self, I2_list, I2_wgt):
+        for tuple in I2_list:
+            self.instance.insert_relation(tuple)
+        self.wgt += I2_wgt
+        self.hrtc = 0
+        assert self.instance.completion
+
+
 class path_instance():
 
     def __init__(self, tu, l):

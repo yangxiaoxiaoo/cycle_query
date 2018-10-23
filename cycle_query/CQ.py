@@ -105,6 +105,73 @@ def priority_search_l_cycle_naive_next(tuple2weight, tu2down_neis, l, PQ, tuple2
                     new_PEI.merge(neighbor, tuple2weight, tuple2rem)
                     heapq.heappush(PQ, new_PEI)
 
+def simple_join(rel2tuple, tuple2weight, tu2down_neis, start, end):
+    # used by all light case to compute a dictionary from I1_list to weight
+
+    list2wgt = dict()
+    for start_tuple in rel2tuple['R' + str(start)]:
+        print start_tuple
+        start_list = tuple([start_tuple])
+        print start_list
+        list2wgt[start_list] = tuple2weight[start_tuple]
+        print list2wgt
+
+    for index in range(start+1, end):
+        new_dict = dict()
+        for key in list2wgt:
+            assert type(key) == tuple
+            if len(key) != 0 and list(key)[-1] in tu2down_neis:
+                for neighbor in tu2down_neis[key[-1]]:
+                    new_key = copy.deepcopy(list(key))
+                    new_key.append(neighbor)
+                    new_dict[tuple(new_key)] = list2wgt[key] + tuple2weight[neighbor]
+        list2wgt = new_dict
+    return list2wgt
+
+
+def priority_search_l_cycle_light_init(rel2tuple, tuple2weight, tu2down_neis, l):
+    print rel2tuple
+    # compute a set of I1_list, a set of I2_list
+    # for each I1_list, the max I2_list weight for it, a list of all matching I2_list
+    PQ = []
+
+    # simple join l/2 first relations to get a set of I1_list to wgt:
+    I1_list2wgt = simple_join(rel2tuple, tuple2weight, tu2down_neis, 0, int(l/2))
+    I2_list2wgt = simple_join(rel2tuple, tuple2weight, tu2down_neis, int(l/2), l)
+    print I2_list2wgt
+    print I1_list2wgt
+
+    breakpoints2hrtc = dict()
+    breakpoints2I2 = dict()
+    for I2_list in I2_list2wgt:
+        if (I2_list[-1][1], I2_list[0][0]) not in breakpoints2I2:
+            breakpoints2I2[(I2_list[-1][1], I2_list[0][0])] = {I2_list}
+            breakpoints2hrtc[(I2_list[-1][1], I2_list[0][0])] = I2_list2wgt[I2_list]
+        else:
+            breakpoints2I2[(I2_list[-1][1], I2_list[0][0])].add(I2_list)
+            breakpoints2hrtc[(I2_list[-1][1], I2_list[0][0])] = min(I2_list2wgt[I2_list], breakpoints2hrtc[(I2_list[-1][1], I2_list[0][0])])
+    for I1_list in I1_list2wgt:
+        cur_breakpoints = (I1_list[0][0], I1_list[-1][1])
+        if cur_breakpoints in breakpoints2I2:
+            curPEI = globalclass.PEI_lightcycle(I1_list[0], 0, 0, l)
+            curPEI.biginit(I1_list, I1_list2wgt[I1_list], breakpoints2hrtc[cur_breakpoints], l)
+            heapq.heappush(PQ, curPEI)
+    print breakpoints2I2
+    print PQ
+    return breakpoints2I2, I2_list2wgt, PQ
+
+
+def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, PQ):
+    while len(PQ) != 0:
+        cur_PEI_cycle = heapq.heappop(PQ)
+        if cur_PEI_cycle.instance.completion:
+            return cur_PEI_cycle
+        else:
+            for I2_list in breakpoints2I2[cur_PEI_cycle.breakpointpair]:
+                new_PEI = copy.deepcopy(cur_PEI_cycle)
+                new_PEI.bigmerge(I2_list, I2_list2wgt[tuple(I2_list)])
+                heapq.heappush(PQ, new_PEI)
+
 
 def heuristic_build_l_cycle(tuple2weight, rel2tuple, tu2down_neis, l):
     # build a dictionary from tuple down to the remaining weight not including tuple
@@ -296,8 +363,8 @@ def l_cycle_split(l, k, test):
     tu2down_neis_list = []
     tu2up_neis_list = []
     TOP_K = []
-    for partition_index in range(l+1):
-        # TODO: handle all light case differently
+    for partition_index in range(l):
+        # with a heavy case: call naive
         tu2down_neis, tu2up_neis = cycle_SJ_reduce_l(partitions[partition_index], l)
         tu2down_neis_list.append(tu2down_neis)
         tu2up_neis_list.append(tu2up_neis)
@@ -306,7 +373,12 @@ def l_cycle_split(l, k, test):
         tuple2rem, PQ = priority_search_l_cycle_naive_init(rotated_subdatabase, tuple2weight, tu2down_neis, l)
         small_PQ_list.append(PQ)  # small_PQ_list[i] is i-th partition's local PQ.
         tuple2rem_list.append(tuple2rem)  # this is different for subdatabases, need to keep.
+    # all light case
+    tu2down_neis, tu2up_neis = cycle_SJ_reduce_l(partitions[l], l)
+    breakpoints2I2, I2_list2wgt, PQ = priority_search_l_cycle_light_init(partitions[l], tuple2weight, tu2down_neis, l)
+    small_PQ_list.append(PQ)
 
+    # start global search
     head_values = []
     for i in range(len(small_PQ_list)):
         PQ = small_PQ_list[i]
@@ -317,8 +389,12 @@ def l_cycle_split(l, k, test):
             assert isinstance(top_PEI, globalclass.PEI_cycle)
             cur_value = top_PEI.wgt + top_PEI.hrtc
             head_values.append(cur_value)
+
+    assert len(head_values) == l + 1
     min_value = min(head_values)
     top_pos = head_values.index(min_value)
+    if top_pos == l:
+        print "top is a light!"
 
 
     while True:
@@ -327,12 +403,20 @@ def l_cycle_split(l, k, test):
 
         if head_values[top_pos] == 99999999:  # another way to tell all empty..
             break
-        next_result = priority_search_l_cycle_naive_next \
-            (tuple2weight, tu2down_neis_list[top_pos], l, small_PQ_list[top_pos], tuple2rem_list[top_pos])
-        if isinstance(next_result, globalclass.PEI_cycle):  # when there is no next, maybe nontype.
-            TOP_K.append(next_result)
-        else:  # this PQ is done.
-            head_values[top_pos] = 99999999
+        if top_pos != l:  # regular partition
+            next_result = priority_search_l_cycle_naive_next \
+                (tuple2weight, tu2down_neis_list[top_pos], l, small_PQ_list[top_pos], tuple2rem_list[top_pos])
+            if isinstance(next_result, globalclass.PEI_cycle):  # when there is no next, maybe nontype.
+                TOP_K.append(next_result)
+            else:  # this PQ is done.
+                head_values[top_pos] = 99999999
+        else:  # all light partition
+            print "come to the all light"
+            next_result = priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, small_PQ_list[l])
+            if isinstance(next_result, globalclass.PEI_lightcycle):  # when there is no next, maybe nontype.
+                TOP_K.append(next_result)
+            else:  # this PQ is done.
+                head_values[top_pos] = 99999999
 
         # update the best value of this small PQ, if there is still some in there.
         if len(small_PQ_list[top_pos]) != 0:
@@ -362,14 +446,24 @@ def l_cycle_split(l, k, test):
 
 
     if l == 4 and test:
-        if TOP_K != TOP_K_PQ2:
-            print "rotation caused index off, ignore for now since we only need the weights"
+        if len(TOP_K) != len(TOP_K_PQ2):
+            print "missed instances from PQs"
+            print small_PQ_list
+            print "top position is " + str(top_pos)
+        assert len(TOP_K) == len(TOP_K_PQ2)
+
+
 
     return TOP_K
 
 
+def test_correctness():
+    while True:
+        l_cycle_split(4, 3, test=True)
 
 if __name__ == "__main__":
     #l_path_sim(5, 3)
     #l_cycle_naive(5, 3)
-    l_cycle_split(5, 10, test=False)
+    l_cycle_split(5, 3, test=False)
+
+
