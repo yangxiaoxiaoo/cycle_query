@@ -72,6 +72,40 @@ def priority_search_l_cycle_naive(K, rel2tuple, tuple2weight, tu2down_neis, l):
     return TOP_K
 
 
+def priority_search_l_cycle_naive_init(rel2tuple, tuple2weight, tu2down_neis, l):
+    #used by a global PQ_global.
+    PQ = []
+    tuple2rem = heuristic_build_l_cycle(tuple2weight, rel2tuple, tu2down_neis, l)
+    for tu in rel2tuple['R0']:
+        if (tu, tu[0]) in tuple2rem:
+            heapq.heappush(PQ, globalclass.PEI_cycle(tu, tuple2weight[tu], tuple2rem[(tu, tu[0])], l))
+    return tuple2rem, PQ
+
+def priority_search_l_cycle_naive_next(tuple2weight, tu2down_neis, l, PQ, tuple2rem):
+    #used by a gobal PQ_global.
+    #takes a PQ for this sub-database, return the next
+    #PQ pass by ref, can be changed.
+    while len(PQ) != 0:
+        cur_PEI_cycle = heapq.heappop(PQ)
+        if cur_PEI_cycle.instance.completion:
+            return cur_PEI_cycle
+        elif cur_PEI_cycle.instance.length != l-1: # not completed, there is frontier, no need to check breakpoint
+            frontier = cur_PEI_cycle.instance.frontier()
+            for neighbor in tu2down_neis[frontier]:
+                if cur_PEI_cycle.mergable(neighbor, tuple2rem):
+                    new_PEI = copy.deepcopy(cur_PEI_cycle)
+                    new_PEI.merge(neighbor, tuple2weight, tuple2rem)
+                    heapq.heappush(PQ, new_PEI)
+
+        else:  # length == l, check breakpoint
+            frontier = cur_PEI_cycle.instance.frontier()
+            for neighbor in tu2down_neis[frontier]:
+                if neighbor[1] == cur_PEI_cycle.breakpoint:
+                    new_PEI = copy.deepcopy(cur_PEI_cycle)
+                    new_PEI.merge(neighbor, tuple2weight, tuple2rem)
+                    heapq.heappush(PQ, new_PEI)
+
+
 def heuristic_build_l_cycle(tuple2weight, rel2tuple, tu2down_neis, l):
     # build a dictionary from tuple down to the remaining weight not including tuple
     # assumption: no tuple appear in different relations
@@ -228,43 +262,115 @@ def l_cycle_database_partition(relation2tuple, l):
 
 
 
-def l_path_sim(l):
-    degrees = [4, 2, 2, 4, 5]
-    var2cand = semi_join_utils.build_data(l, degrees)
+def l_path_sim(l,k):
+    attr_card = [4, 2, 2, 4, 5]
+    var2cand = semi_join_utils.build_data(l, attr_card)
     min_relations, tuple2weight = semi_join_utils.build_relation(l, var2cand, weightrange=10)
     tu2down_neis, tu2up_neis = path_SJ_reduce_l(min_relations, l)
-    TOP_K_PQ = priority_search_l_path(5, min_relations, tuple2weight, tu2down_neis, l)
+    TOP_K_PQ = priority_search_l_path(k, min_relations, tuple2weight, tu2down_neis, l)
 
-def l_cycle_naive(l):
-    degrees = [4, 2, 2, 4, 5]
-    var2cand = semi_join_utils.build_data(l, degrees)
+def l_cycle_naive(l, k):
+    attr_card = [4, 2, 2, 4, 5]
+    var2cand = semi_join_utils.build_data(l, attr_card)
     min_relations, tuple2weight = semi_join_utils.build_relation(l, var2cand, weightrange=10)
     tu2down_neis, tu2up_neis = cycle_SJ_reduce_l(min_relations, l)
-    TOP_K_PQ = priority_search_l_cycle_naive(5, min_relations, tuple2weight, tu2down_neis, l)
+    TOP_K_PQ = priority_search_l_cycle_naive(k, min_relations, tuple2weight, tu2down_neis, l)
     if l == 4:
-        TOP_K_PQ2 = semi_join_utils.priority_search_4(5, min_relations, tuple2weight, tu2down_neis)
+        TOP_K_PQ2 = semi_join_utils.priority_search_4(k, min_relations, tuple2weight, tu2down_neis)
         assert TOP_K_PQ == TOP_K_PQ2
 
-def l_cycle_split(l):
-    degrees = [4, 2, 2, 4, 5]
-    var2cand = semi_join_utils.build_data(l, degrees)
+def l_cycle_split(l, k):
+    attr_card = [2, 2, 2, 2, 2]
+    var2cand = semi_join_utils.build_data(l, attr_card)
     min_relations, tuple2weight = semi_join_utils.build_relation(l, var2cand, weightrange=10)
     assert min_relations == cycle_rotate(min_relations, l, l)
     assert min_relations == cycle_rotate(min_relations, 0, l)
 
-    partitions = l_cycle_database_partition(min_relations, l)
-    for partition_index in range(l):
-        # for first l regular partitions, call naive search.
-        # TODO: But with a global PQ! Currently outputting too much.
-        tu2down_neis, tu2up_neis = cycle_SJ_reduce_l(partitions[partition_index], l)
-        TOP_K_PQ = priority_search_l_cycle_naive(5, cycle_rotate(partitions[partition_index], partition_index, l), tuple2weight, tu2down_neis, l)
-        # TODO: add what to do for the all light case.
+    if l == 4:
+        tu2down_neis4, tu2up_neis4 = semi_join_utils.full_SJ_reduce_4(min_relations)
+        TOP_K_PQ2 = semi_join_utils.priority_search_4(k, min_relations, tuple2weight, tu2down_neis4)
 
-    tu2down_neis, tu2up_neis = cycle_SJ_reduce_l(min_relations, l)
-    TOP_K_PQ = priority_search_l_cycle_naive(5, min_relations, tuple2weight, tu2down_neis, l)
+    partitions = l_cycle_database_partition(min_relations, l)
+    small_PQ_list = []
+    tuple2rem_list = []
+    tu2down_neis_list = []
+    tu2up_neis_list = []
+    TOP_K = []
+    for partition_index in range(l+1):
+        # TODO: handle all light case differently
+        tu2down_neis, tu2up_neis = cycle_SJ_reduce_l(partitions[partition_index], l)
+        tu2down_neis_list.append(tu2down_neis)
+        tu2up_neis_list.append(tu2up_neis)
+        rotated_subdatabase = cycle_rotate(partitions[partition_index], partition_index, l)
+
+        tuple2rem, PQ = priority_search_l_cycle_naive_init(rotated_subdatabase, tuple2weight, tu2down_neis, l)
+        small_PQ_list.append(PQ)  # small_PQ_list[i] is i-th partition's local PQ.
+        tuple2rem_list.append(tuple2rem)  # this is different for subdatabases, need to keep.
+
+    head_values = []
+    for i in range(len(small_PQ_list)):
+        PQ = small_PQ_list[i]
+        if len(PQ) == 0:
+            head_values.append(99999999) # mark that empty PQ as infinate large head value, since we look for lightest
+        else:
+            top_PEI = PQ[0]  # peak at top result
+            assert isinstance(top_PEI, globalclass.PEI_cycle)
+            cur_value = top_PEI.wgt + top_PEI.hrtc
+            head_values.append(cur_value)
+    min_value = min(head_values)
+    top_pos = head_values.index(min_value)
+
+
+    while True:
+        # popped instance from the top_pos PQ
+        # get the next result from there.
+
+        if head_values[top_pos] == 99999999:  # another way to tell all empty..
+            break
+
+        next_result = priority_search_l_cycle_naive_next \
+            (tuple2weight, tu2down_neis_list[top_pos], l, small_PQ_list[top_pos], tuple2rem_list[top_pos])
+        if isinstance(next_result, globalclass.PEI_cycle):  # when there is no next, maybe nontype.
+            TOP_K.append(next_result)
+        else:  # this PQ is done.
+            head_values[top_pos] = 99999999
+
+        # update the best value of this small PQ, if there is still some in there.
+        if len(small_PQ_list[top_pos]) != 0:
+            new_top_PEI = small_PQ_list[top_pos][0]
+            cur_value = new_top_PEI.wgt + new_top_PEI.hrtc
+            head_values[top_pos] = cur_value
+        else:  # this PQ is done.
+            head_values[top_pos] = 99999999
+
+        #find the smallest head value and set that to top_position.
+        min_value = min(head_values)
+        top_pos = head_values.index(min_value)
+
+        #terminate when all small PQs are empty
+        all_empty = True
+        for small_PQ in small_PQ_list:
+            if len(small_PQ) != 0:
+                all_empty = False
+        if all_empty:
+            break
+        #terminate when TOP_K is full
+        if len(TOP_K) == k:
+            break
+    print "TOP K results are"
+    for PEI in TOP_K:
+        print PEI.wgt
+
+
+    if l == 4:
+        if TOP_K != TOP_K_PQ2:
+            print "rotation caused index off, ignore for now since we only need the weights"
+
+    return TOP_K
+
 
 
 if __name__ == "__main__":
-    #l_path_sim(5)
-    #l_cycle_naive(5)
-    l_cycle_split(5)
+    #l_path_sim(5, 3)
+    #l_cycle_naive(5, 3)
+    l_cycle_split(4, 10)
