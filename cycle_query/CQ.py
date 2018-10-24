@@ -110,11 +110,11 @@ def simple_join(rel2tuple, tuple2weight, tu2down_neis, start, end):
 
     list2wgt = dict()
     for start_tuple in rel2tuple['R' + str(start)]:
-        print start_tuple
+        # print start_tuple
         start_list = tuple([start_tuple])
-        print start_list
+        # print start_list
         list2wgt[start_list] = tuple2weight[start_tuple]
-        print list2wgt
+        # print list2wgt
 
     for index in range(start+1, end):
         new_dict = dict()
@@ -327,14 +327,72 @@ def l_cycle_database_partition(relation2tuple, l):
 
     return partitions
 
-
+def path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis,k, l):
+    # after the semi-join reduction, Yannakakis output simple join
+    list2weight = simple_join(rel2tuple, tuple2weight, tu2down_neis, 0, l)
+    sorted_weight = sorted(list2weight.values())
+    for i in range(min(len(sorted_weight), k)):
+        print sorted_weight[i]
 
 def l_path_sim(l,k):
     attr_card = [4, 2, 2, 4, 5]
     var2cand = semi_join_utils.build_data(l, attr_card)
-    min_relations, tuple2weight = semi_join_utils.build_relation(l, var2cand, weightrange=10)
-    tu2down_neis, tu2up_neis = path_SJ_reduce_l(min_relations, l)
-    TOP_K_PQ = priority_search_l_path(k, min_relations, tuple2weight, tu2down_neis, l)
+    rel2tuple, tuple2weight = semi_join_utils.build_relation(l, var2cand, weightrange=10)
+    tu2down_neis, tu2up_neis = path_SJ_reduce_l(rel2tuple, l)
+    print "algo: any-k priotitized search"
+    TOP_K_PQ = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l)
+    print "algo: enumerate all"
+    path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis, k, l)
+
+def cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l):
+    # NPRR recursive join.
+    results = []
+    results2wgt = dict()
+
+    l_part_2weight = simple_join(rel2tuple, tuple2weight, tu2down_neis, 1, l-2)
+    for l_part in l_part_2weight:
+        assert len(l_part) == l-3
+        tu_start = l_part[0]
+        tu_end = l_part[-1]
+        if tu_start not in tu2up_neis or tu_end not in tu2down_neis:
+            # there is no cycles for this l_part.
+            continue
+        path_count = len(tu2up_neis[tu_start]) * len(tu2down_neis[tu_end])
+        close_relation = rel2tuple['R' + str(l-1)]
+
+        path_list = []
+        if path_count < len(close_relation):
+            # materialize the paths
+            for up_nei in tu2up_neis[tu_start]:
+                for down_nei in tu2down_neis[tu_end]:
+                    path = [up_nei] + list(l_part) + [down_nei]
+                    path_list.append(path)
+                    if (path[-1][1], path[0][0]) in tuple2weight:
+                        results2wgt[tuple(path)] = tuple2weight[up_nei] + l_part_2weight[l_part] \
+                                               + tuple2weight[down_nei] + tuple2weight[(path[-1][1], path[0][0])]
+            for path in path_list:
+                if (path[-1][1], path[0][0]) in close_relation:
+                    results.append(path)
+        else:
+            # loop through each tuple tu_close in R(l-1)
+            # check if the tuple made of this R1[0] and tu_close[1] is in R0,
+            # and tuple made of  this R(l-2)[1] and tu_close[0] is in R(l-2)
+            for close_tu in rel2tuple['R' + str(l-1)]:
+                if (close_tu[1], l_part[0][0]) in rel2tuple['R0'] and \
+                        (l_part[-1][1], close_tu[0]) in rel2tuple['R'+str(l-2)]:
+                    path = [(close_tu[1], l_part[0][0])] + list(l_part) + [(l_part[-1][1], close_tu[0])]
+                    results2wgt[tuple(path)] = tuple2weight[(close_tu[1], l_part[0][0])] + l_part_2weight[l_part] \
+                                               + tuple2weight[(l_part[-1][1], close_tu[0])] + tuple2weight[close_tu]
+                    results.append(path)
+    values = []
+    for result in results:
+        values.append(results2wgt[tuple(result)])
+    sorted_values = sorted(values)
+    for i in range(min(len(sorted_values), k)):
+        print sorted_values[i]
+
+
+
 
 def l_cycle_naive(l, k):
     attr_card = [4, 2, 2, 4, 5]
@@ -349,15 +407,16 @@ def l_cycle_naive(l, k):
 def l_cycle_split(l, k, test):
     attr_card = [2, 2, 2, 2, 2]
     var2cand = semi_join_utils.build_data(l, attr_card)
-    min_relations, tuple2weight = semi_join_utils.build_relation(l, var2cand, weightrange=10)
-    assert min_relations == cycle_rotate(min_relations, l, l)
-    assert min_relations == cycle_rotate(min_relations, 0, l)
+    rel2tuple, tuple2weight = semi_join_utils.build_relation(l, var2cand, weightrange=10)
+    assert rel2tuple == cycle_rotate(rel2tuple, l, l)
+    assert rel2tuple == cycle_rotate(rel2tuple, 0, l)
 
     if l == 4  and test:
-        tu2down_neis4, tu2up_neis4 = semi_join_utils.full_SJ_reduce_4(min_relations)
-        TOP_K_PQ2 = semi_join_utils.priority_search_4(k, min_relations, tuple2weight, tu2down_neis4)
+        tu2down_neis4, tu2up_neis4 = semi_join_utils.full_SJ_reduce_4(rel2tuple)
+        TOP_K_PQ2 = semi_join_utils.priority_search_4(k, rel2tuple, tuple2weight, tu2down_neis4)
+        cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis4, tu2down_neis4, k, l)
 
-    partitions = l_cycle_database_partition(min_relations, l)
+    partitions = l_cycle_database_partition(rel2tuple, l)
     small_PQ_list = []
     tuple2rem_list = []
     tu2down_neis_list = []
@@ -444,15 +503,12 @@ def l_cycle_split(l, k, test):
     for PEI in TOP_K:
         print PEI.wgt
 
-
     if l == 4 and test:
         if len(TOP_K) != len(TOP_K_PQ2):
             print "missed instances from PQs"
             print small_PQ_list
             print "top position is " + str(top_pos)
         assert len(TOP_K) == len(TOP_K_PQ2)
-
-
 
     return TOP_K
 
@@ -461,9 +517,13 @@ def test_correctness():
     while True:
         l_cycle_split(4, 3, test=True)
 
+
 if __name__ == "__main__":
     #l_path_sim(5, 3)
     #l_cycle_naive(5, 3)
-    l_cycle_split(5, 3, test=False)
+    #l_cycle_split(5, 3, test=False)
+    test_correctness()
+
+
 
 
