@@ -344,12 +344,14 @@ def l_path_sim(l,k):
     print "algo: enumerate all"
     path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis, k, l)
 
-def cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l):
-    # NPRR recursive join.
+def cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l, recurse_or_not):
+    # NPRR recursive join. Use Yannakakis as a subroutine
     results = []
     results2wgt = dict()
-
-    l_part_2weight = simple_join(rel2tuple, tuple2weight, tu2down_neis, 1, l-2)
+    if recurse_or_not:
+        l_part_2weight = cycle_path_recursive(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, 1, l - 2)
+    else:
+        l_part_2weight = simple_join(rel2tuple, tuple2weight, tu2down_neis, 1, l-2)
     for l_part in l_part_2weight:
         assert len(l_part) == l-3
         tu_start = l_part[0]
@@ -392,6 +394,63 @@ def cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l)
         print sorted_values[i]
 
 
+def cycle_path_recursive(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, start, l):
+    # NPRR recursive join on path as described. l-lenth path
+    results = []
+    results2wgt = dict()
+    if l-start == 1:
+        for tu in rel2tuple['R' + str(start)]:
+            result = [tu]
+            results.append(result)
+            results2wgt[tuple(result)] = tuple2weight[tu]
+        return results2wgt
+
+    if l-start == 2:
+        for tu in rel2tuple['R'+str(start)]:
+            if tu not in tu2down_neis:
+                continue
+            for neighbor in tu2down_neis[tu]:
+                result = [tu, neighbor]
+                results.append(result)
+                results2wgt[tuple(result)] = tuple2weight[tu] + tuple2weight[neighbor]
+        print results2wgt
+        return results2wgt
+
+    else:
+        l_part_2weight = cycle_path_recursive(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, start, l-2)
+        for l_part in l_part_2weight:
+            assert len(l_part) == l-3
+            tu_start = l_part[0]
+            tu_end = l_part[-1]
+            if tu_start not in tu2up_neis or tu_end not in tu2down_neis:
+                # there is no cycles for this l_part.
+                continue
+            path_count = len(tu2down_neis[tu_end])
+            close_relation = rel2tuple['R' + str(l-1)]
+
+            path_list = []
+            if path_count < len(close_relation):
+                # materialize the paths
+
+                for down_nei in tu2down_neis[tu_end]:
+                    path = list(l_part) + [down_nei]
+                    path_list.append(path)
+                    results2wgt[tuple(path)] = l_part_2weight[l_part] + tuple2weight[down_nei]
+                for path in path_list:
+                    if path[-1] in close_relation:
+                        results.append(path)
+            else:
+                for close_tu in rel2tuple['R' + str(l-1-start)]:
+                    if (l_part[-1][1], close_tu[0]) in rel2tuple['R'+str(l-2-start)]:
+                        path = list(l_part) + [(l_part[-1][1], close_tu[0])]
+                        results2wgt[tuple(path)] = l_part_2weight[l_part] + tuple2weight[(l_part[-1][1], close_tu[0])]
+                        results.append(path)
+        ret = dict()
+        for result in results:
+            ret[tuple(result)] = results2wgt[tuple(result)]
+        return ret
+        # only return those that are in the result, throw away dangling ones.
+
 
 
 def l_cycle_naive(l, k):
@@ -414,7 +473,9 @@ def l_cycle_split(l, k, test):
     if l == 4  and test:
         tu2down_neis4, tu2up_neis4 = semi_join_utils.full_SJ_reduce_4(rel2tuple)
         TOP_K_PQ2 = semi_join_utils.priority_search_4(k, rel2tuple, tuple2weight, tu2down_neis4)
-        cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis4, tu2down_neis4, k, l)
+        cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis4, tu2down_neis4, k, l, True)
+        cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis4, tu2down_neis4, k, l, False)
+
 
     partitions = l_cycle_database_partition(rel2tuple, l)
     small_PQ_list = []
