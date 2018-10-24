@@ -335,6 +335,7 @@ def path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis,k, l):
         print sorted_weight[i]
 
 def l_path_sim(l,k):
+    # simple simulation on l_simple path. Tested and can be referred to in experiments.
     attr_card = [4, 2, 2, 4, 5]
     var2cand = semi_join_utils.build_data(l, attr_card)
     rel2tuple, tuple2weight = semi_join_utils.build_relation(l, var2cand, weightrange=10)
@@ -396,6 +397,7 @@ def cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l,
 
 def cycle_path_recursive(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, start, l):
     # NPRR recursive join on path as described. l-lenth path
+    # will be used by cycle as a subroutine
     results = []
     results2wgt = dict()
     if l-start == 1:
