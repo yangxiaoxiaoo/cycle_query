@@ -141,8 +141,8 @@ def priority_search_l_cycle_light_init(rel2tuple, tuple2weight, tu2down_neis, l)
     # simple join l/2 first relations to get a set of I1_list to wgt:
     I1_list2wgt = simple_join(rel2tuple, tuple2weight, tu2down_neis, 0, int(l/2))
     I2_list2wgt = simple_join(rel2tuple, tuple2weight, tu2down_neis, int(l/2), l)
-    print I2_list2wgt
-    print I1_list2wgt
+    # print I2_list2wgt
+    # print I1_list2wgt
 
     breakpoints2hrtc = dict()
     breakpoints2I2 = dict()
@@ -159,8 +159,8 @@ def priority_search_l_cycle_light_init(rel2tuple, tuple2weight, tu2down_neis, l)
             curPEI = globalclass.PEI_lightcycle(I1_list[0], 0, 0, l)
             curPEI.biginit(I1_list, I1_list2wgt[I1_list], breakpoints2hrtc[cur_breakpoints], l)
             heapq.heappush(PQ, curPEI)
-    print breakpoints2I2
-    print PQ
+    # print breakpoints2I2
+    # print PQ
     return breakpoints2I2, I2_list2wgt, PQ
 
 
@@ -404,6 +404,7 @@ def cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l,
     sorted_values = sorted(values)
     for i in range(min(len(sorted_values), k)):
         print sorted_values[i]
+    return results
 
 
 def cycle_path_recursive(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, start, l):
@@ -484,6 +485,8 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l):
     tu2down_neis_list = []
     tu2up_neis_list = []
     TOP_K = []
+    time_for_each = []
+    time_start = timeit.default_timer()
     for partition_index in range(l):
         # with a heavy case: call naive
         tu2down_neis, tu2up_neis = cycle_SJ_reduce_l(partitions[partition_index], l)
@@ -514,8 +517,8 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l):
     assert len(head_values) == l + 1
     min_value = min(head_values)
     top_pos = head_values.index(min_value)
-    if top_pos == l:
-        print "top is a light!"
+    #if top_pos == l:
+    #    print "top is a light!"
 
     while True:
         # popped instance from the top_pos PQ
@@ -528,6 +531,9 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l):
                 (tuple2weight, tu2down_neis_list[top_pos], l, small_PQ_list[top_pos], tuple2rem_list[top_pos])
             if isinstance(next_result, globalclass.PEI_cycle):  # when there is no next, maybe nontype.
                 TOP_K.append(next_result)
+                time_end = timeit.default_timer()
+                time_for_each.append(time_end - time_start)
+                time_start = time_end
             else:  # this PQ is done.
                 head_values[top_pos] = 99999999
         else:  # all light partition
@@ -535,6 +541,9 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l):
             next_result = priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, small_PQ_list[l])
             if isinstance(next_result, globalclass.PEI_lightcycle):  # when there is no next, maybe nontype.
                 TOP_K.append(next_result)
+                time_end = timeit.default_timer()
+                time_for_each.append(time_end - time_start)
+                time_start = time_end
             else:  # this PQ is done.
                 head_values[top_pos] = 99999999
 
@@ -561,7 +570,7 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l):
         if len(TOP_K) == k:
             break
 
-    return TOP_K
+    return TOP_K, time_for_each
 
 
 def l_cycle_split(l, k, test):
@@ -577,7 +586,7 @@ def l_cycle_split(l, k, test):
         cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis4, tu2down_neis4, k, l, True)
         cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis4, tu2down_neis4, k, l, False)
 
-    TOP_K = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l)
+    TOP_K, time_for_each = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l)
 
     print "TOP K results are"
     for PEI in TOP_K:
