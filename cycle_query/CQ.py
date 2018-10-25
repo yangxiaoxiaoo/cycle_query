@@ -3,7 +3,7 @@ import random
 import heapq
 import globalclass
 import copy
-import time
+import timeit
 import semi_join_utils
 
 def path_SJ_reduce_l(rel2tuple, l):
@@ -85,6 +85,7 @@ def priority_search_l_cycle_naive_next(tuple2weight, tu2down_neis, l, PQ, tuple2
     #used by a gobal PQ_global.
     #takes a PQ for this sub-database, return the next
     #PQ pass by ref, can be changed.
+    t_start = timeit.default_timer()
     while len(PQ) != 0:
         cur_PEI_cycle = heapq.heappop(PQ)
         if cur_PEI_cycle.instance.completion:
@@ -104,6 +105,8 @@ def priority_search_l_cycle_naive_next(tuple2weight, tu2down_neis, l, PQ, tuple2
                     new_PEI = copy.deepcopy(cur_PEI_cycle)
                     new_PEI.merge(neighbor, tuple2weight, tuple2rem)
                     heapq.heappush(PQ, new_PEI)
+    t_end = timeit.default_timer()
+    return t_end - t_start
 
 def simple_join(rel2tuple, tuple2weight, tu2down_neis, start, end):
     # used by all light case to compute a dictionary from I1_list to weight
@@ -162,6 +165,7 @@ def priority_search_l_cycle_light_init(rel2tuple, tuple2weight, tu2down_neis, l)
 
 
 def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, PQ):
+    t_start = timeit.default_timer()
     while len(PQ) != 0:
         cur_PEI_cycle = heapq.heappop(PQ)
         if cur_PEI_cycle.instance.completion:
@@ -171,6 +175,8 @@ def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, PQ):
                 new_PEI = copy.deepcopy(cur_PEI_cycle)
                 new_PEI.bigmerge(I2_list, I2_list2wgt[tuple(I2_list)])
                 heapq.heappush(PQ, new_PEI)
+    t_end = timeit.default_timer()
+    return t_end - t_start
 
 
 def heuristic_build_l_cycle(tuple2weight, rel2tuple, tu2down_neis, l):
@@ -231,6 +237,8 @@ def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l):
     # push PEIs into a priority queue, pop k heaviest full items
     # [DESIGN CHOICE] pop the lightest element as consistent with heapq native! If paper is about heaviest, can modify later.
     TOP_K = []
+    time_for_each = []
+    start_time = timeit.default_timer()
     PQ = []
     tuple2rem = heuristic_build_l_path(tuple2weight, rel2tuple, tu2down_neis, l)
     for tu in rel2tuple['R0']:
@@ -241,6 +249,9 @@ def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l):
         cur_PEI_path = heapq.heappop(PQ)
         if cur_PEI_path.instance.completion:
             TOP_K.append(cur_PEI_path)
+            end_time = timeit.default_timer()
+            time_for_each.append(end_time - start_time)
+            start_time = end_time
             if len(TOP_K) == K:
                 break
         elif cur_PEI_path.instance.length != l-1: # not completed, there is frontier, no need to check breakpoint
@@ -261,7 +272,7 @@ def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l):
     for PEI_path in TOP_K:
         print PEI_path.wgt
     assert len(TOP_K) == K or len(PQ) == 0
-    return TOP_K
+    return TOP_K, time_for_each
 
 def cycle_rotate(relation2tuple, pos, l):
     # take the original database relation2tuple dictionary, rotate it by pos downwards in a l-length cycle.
@@ -341,7 +352,7 @@ def l_path_sim(l,k):
     rel2tuple, tuple2weight = semi_join_utils.build_relation(l, var2cand, weightrange=10)
     tu2down_neis, tu2up_neis = path_SJ_reduce_l(rel2tuple, l)
     print "algo: any-k priotitized search"
-    TOP_K_PQ = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l)
+    TOP_K_PQ, time_for_each = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l)
     print "algo: enumerate all"
     path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis, k, l)
 
@@ -465,20 +476,8 @@ def l_cycle_naive(l, k):
         TOP_K_PQ2 = semi_join_utils.priority_search_4(k, min_relations, tuple2weight, tu2down_neis)
         assert TOP_K_PQ == TOP_K_PQ2
 
-def l_cycle_split(l, k, test):
-    attr_card = [2, 2, 2, 2, 2]
-    var2cand = semi_join_utils.build_data(l, attr_card)
-    rel2tuple, tuple2weight = semi_join_utils.build_relation(l, var2cand, weightrange=10)
-    assert rel2tuple == cycle_rotate(rel2tuple, l, l)
-    assert rel2tuple == cycle_rotate(rel2tuple, 0, l)
 
-    if l == 4  and test:
-        tu2down_neis4, tu2up_neis4 = semi_join_utils.full_SJ_reduce_4(rel2tuple)
-        TOP_K_PQ2 = semi_join_utils.priority_search_4(k, rel2tuple, tuple2weight, tu2down_neis4)
-        cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis4, tu2down_neis4, k, l, True)
-        cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis4, tu2down_neis4, k, l, False)
-
-
+def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l):
     partitions = l_cycle_database_partition(rel2tuple, l)
     small_PQ_list = []
     tuple2rem_list = []
@@ -505,7 +504,7 @@ def l_cycle_split(l, k, test):
     for i in range(len(small_PQ_list)):
         PQ = small_PQ_list[i]
         if len(PQ) == 0:
-            head_values.append(99999999) # mark that empty PQ as infinate large head value, since we look for lightest
+            head_values.append(99999999)  # mark that empty PQ as infinate large head value, since we look for lightest
         else:
             top_PEI = PQ[0]  # peak at top result
             assert isinstance(top_PEI, globalclass.PEI_cycle)
@@ -517,7 +516,6 @@ def l_cycle_split(l, k, test):
     top_pos = head_values.index(min_value)
     if top_pos == l:
         print "top is a light!"
-
 
     while True:
         # popped instance from the top_pos PQ
@@ -548,20 +546,39 @@ def l_cycle_split(l, k, test):
         else:  # this PQ is done.
             head_values[top_pos] = 99999999
 
-        #find the smallest head value and set that to top_position.
+        # find the smallest head value and set that to top_position.
         min_value = min(head_values)
         top_pos = head_values.index(min_value)
 
-        #terminate when all small PQs are empty
+        # terminate when all small PQs are empty
         all_empty = True
         for small_PQ in small_PQ_list:
             if len(small_PQ) != 0:
                 all_empty = False
         if all_empty:
             break
-        #terminate when TOP_K is full
+        # terminate when TOP_K is full
         if len(TOP_K) == k:
             break
+
+    return TOP_K
+
+
+def l_cycle_split(l, k, test):
+    attr_card = [2, 2, 2, 2, 2]
+    var2cand = semi_join_utils.build_data(l, attr_card)
+    rel2tuple, tuple2weight = semi_join_utils.build_relation(l, var2cand, weightrange=10)
+    assert rel2tuple == cycle_rotate(rel2tuple, l, l)
+    assert rel2tuple == cycle_rotate(rel2tuple, 0, l)
+
+    if l == 4  and test:
+        tu2down_neis4, tu2up_neis4 = semi_join_utils.full_SJ_reduce_4(rel2tuple)
+        TOP_K_PQ2 = semi_join_utils.priority_search_4(k, rel2tuple, tuple2weight, tu2down_neis4)
+        cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis4, tu2down_neis4, k, l, True)
+        cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis4, tu2down_neis4, k, l, False)
+
+    TOP_K = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l)
+
     print "TOP K results are"
     for PEI in TOP_K:
         print PEI.wgt
@@ -569,8 +586,6 @@ def l_cycle_split(l, k, test):
     if l == 4 and test:
         if len(TOP_K) != len(TOP_K_PQ2):
             print "missed instances from PQs"
-            print small_PQ_list
-            print "top position is " + str(top_pos)
         assert len(TOP_K) == len(TOP_K_PQ2)
 
     return TOP_K

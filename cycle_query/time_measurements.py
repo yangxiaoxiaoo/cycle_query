@@ -48,4 +48,4 @@ def plot():
     pass
 
 if __name__ == "__main__":
-    measure_time_l_path(20, 5, False)
+    measure_time_l_path(30, 5, False)
