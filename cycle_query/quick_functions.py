@@ -1,5 +1,5 @@
 # this file contains some quick utilities, may require other files' presence
-# therefore is not guaranteed to stay usable in time
+# therefore is not guaranteed to stay usable in time_any
 
 import networkx as nx
 import copy

@@ -370,7 +370,7 @@ def priority_search_4(K, rel2tuple, tuple2weight, tu2down_neis):
     TOP_K = []
     PQ = []
     tuple2rem = heuristic_build_4(tuple2weight, rel2tuple, tu2down_neis)
-    # for fair time measurement sake, tuple2rem should be part of prioritized search.
+    # for fair time_any measurement sake, tuple2rem should be part of prioritized search.
     for tu in rel2tuple['R0']:
         if (tu, tu[0]) in tuple2rem:
             heapq.heappush(PQ, globalclass.PEI(tu, tuple2weight[tu], tuple2rem[(tu, tu[0])]))
@@ -472,7 +472,7 @@ def test_priority_search():
 
 
 def time_measurements(degrees, K):
-    # return a pair of running time of prioritized search and enumerate all
+    # return a pair of running time_any of prioritized search and enumerate all
     var2cand = build_data(4, degrees)
     min_relations, tuple2weight = build_relation(4, var2cand, weightrange=10)
     tu2down_neis, tu2up_neis = full_SJ_reduce_4(min_relations)
@@ -488,7 +488,7 @@ def time_measurements(degrees, K):
     assert TOP_K_enu == TOP_K_PQ
     print "===total count is==="
     print total
-    print "=====running time=="
+    print "=====running time===="
     print time_PQ
     print time_enu
     return time_PQ, time_enu
