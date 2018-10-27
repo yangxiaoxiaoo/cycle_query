@@ -50,16 +50,47 @@ def measure_time_l_path(n, l, cycle_or_not):
 
 
 def measure_time_grow_n():
-    for l in range(10, 4, -1):
-        for n in range(5, 51, 5):
+    for l in range(4, 10, 1):
+        for n in range(5, 30, 5):
             measure_time_l_path(n, l, True)  # cyclic
             measure_time_l_path(n, l, False)  # cyclic
 
-
+from os import listdir
+from os.path import isfile, join
+import matplotlib.pyplot as plt
 def plot():
     # TODO: read from pickle and plot.
+    any_k_times = []
+    for f in listdir('../time_any'):
+        if isfile(join('../time_any', f)) and isfile(join('../time_all', f)):
+            time_for_each = pickle.load(open(join('../time_any', f),'rb'))
+            timetuple_full = pickle.load(open(join('../time_all', f), 'rb'))
+            n = int(f.split('_')[0])
+            l = int(f.split('_')[1])
+            cycle_or_not =  f.split('_')[2] == 'cycle'
+            time_for_all = []
+            results_count = []
+            time_till_now = []
+            accumulated_time = 0
+            for i in range(len(time_for_each)):
+                time_till_now.append(time_for_each[i] + accumulated_time)
+                accumulated_time = time_for_each[i] + accumulated_time
+                results_count.append(i+1)
+                time_for_all.append(timetuple_full[1])
+            plt.plot(results_count, time_till_now, 'r--', results_count, time_for_all, 'b--')
+            line_1, = plt.plot(results_count, time_till_now, 'r--', label='line 1')
+            line_2, = plt.plot(results_count, time_for_all, 'b--', label='Line 2')
+            plt.legend([line_1, line_2], ['any-k', 'full enumeration'])
+            if cycle_or_not:
+                plt.title('d_max = '+ str(n) + ', l = ' + str(l) + ', cycle')
+            else:
+                plt.title('d_max = ' + str(n) + ', l = ' + str(l) + ', path')
+            plt.show()
+
+
     pass
 
 if __name__ == "__main__":
     #measure_time_l_path(80, 7, True)
-    measure_time_grow_n()
+    #measure_time_grow_n()
+    plot()

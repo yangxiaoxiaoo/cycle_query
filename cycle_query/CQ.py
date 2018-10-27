@@ -357,7 +357,7 @@ def l_path_sim(l,k):
     path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis, k, l)
 
 def cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l, recurse_or_not):
-    # NPRR recursive join. Use Yannakakis as a subroutine
+    # NPRR recursive join. May use Yannakakis as a subroutine
     results = []
     results2wgt = dict()
     if recurse_or_not:
@@ -399,11 +399,26 @@ def cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l,
                                                + tuple2weight[(l_part[-1][1], close_tu[0])] + tuple2weight[close_tu]
                     results.append(path)
     values = []
+    PEIs = []
     for result in results:
+        print result
+        assert len(result) == l-1
+        print  result[:l/2]
+        print result[l/2:] + [(result[-1][1], result[0][0])]
+        PEI_instance = globalclass.PEI_lightcycle(result[0], 0, 0, l)
+        PEI_instance.biginit(result[:l/2], 0, 0, l)
+        PEI_instance.bigmerge(result[l/2:] + [(result[-1][1], result[0][0])], results2wgt[tuple(result)])
+        PEIs.append(PEI_instance)
+
         values.append(results2wgt[tuple(result)])
     sorted_values = sorted(values)
     for i in range(min(len(sorted_values), k)):
         print sorted_values[i]
+
+    sorted_PEIs = sorted(PEIs)
+    for i in range(min(len(sorted_values), k)):
+        print sorted_PEIs[i].wgt
+
     return results
 
 
