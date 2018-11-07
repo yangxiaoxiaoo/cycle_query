@@ -95,19 +95,29 @@ def measure_time_l_v2(n, l_start, l_end, cycle_or_not):
             pickle.dump(time_for_each, open("../time_any/" + str(n) + '_' + str(l) + '_path', 'wb'))
             pickle.dump(timetuple_full, open("../time_all/" + str(n) + '_' + str(l) + '_path', 'wb'))
 
+import DataGenerator
 def measure_time_n_v2(n_start, n_end, l, cycle_or_not):
     # for the same query, plot how the running times changes as database density changes.
     # this requires the database generation procedure for every value of n...
     # not needed apart from v1 if same d_max generation method.
-    # TODO: call Nikos's functions as a subroutine.
 
     for n in range(n_start, n_end, (n_end - n_start)/15):
 
-        attr_card = []
-        for i in range(l):
-            attr_card.append(n)
-        var2cand = semi_join_utils.build_data(l, attr_card)
-        rel2tuple, tuple2weight = semi_join_utils.build_relation(l, var2cand, weightrange=10)
+        # attr_card = []
+        # for i in range(l):
+        #     attr_card.append(n)
+        # var2cand = semi_join_utils.build_data(l, attr_card)
+        # rel2tuple, tuple2weight = semi_join_utils.build_relation(l, var2cand, weightrange=10)
+
+        if cycle_or_not:
+            queryType = "Cycle"
+        else:
+            queryType = "Path"
+        DensityOfEdges = "Full"
+        edgeDistribution = "HardCase"
+        rel2tuple, tuple2weight = DataGenerator.mainGenerator\
+            (queryType, n, l, DensityOfEdges, edgeDistribution, 1, False)
+
         t_start = timeit.default_timer()
         tu2down_neis, tu2up_neis = CQ.cycle_SJ_reduce_l(rel2tuple, l)
         t_end = timeit.default_timer()
@@ -257,5 +267,7 @@ def plot(mode, target):
 if __name__ == "__main__":
     #measure_time_l_path(80, 7, True)
     #measure_time_grow_n()
-    plot(2, 15)
+    #plot(2, 15)
     #measure_time_grow_v2()
+    measure_time_n_v2(3, 50, 5, True)
+    measure_time_n_v2(3, 50, 5, False)
