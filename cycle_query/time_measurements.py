@@ -115,8 +115,8 @@ def measure_time_n_v2(n_start, n_end, l, cycle_or_not):
             queryType = "Path"
         DensityOfEdges = "Full"
         edgeDistribution = "HardCase"
-        rel2tuple, tuple2weight = DataGenerator.mainGenerator\
-            (queryType, n, l, DensityOfEdges, edgeDistribution, 1, False)
+        rel2tuple, tuple2weight = DataGenerator.getDatabase\
+            (queryType, n, l, DensityOfEdges, edgeDistribution, 1)
 
         t_start = timeit.default_timer()
         tu2down_neis, tu2up_neis = CQ.cycle_SJ_reduce_l(rel2tuple, l)
