@@ -32,7 +32,7 @@ def measure_time_l_path(n, l, cycle_or_not):
         TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l)
         t1 = timeit.default_timer()
         print "algo: enumerate all"
-        CQ.cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l, True)
+        CQ.cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l, False)
         t3 = timeit.default_timer()
 
         print ('Time any-k split: ', t_preprocess + sum(time_for_each))
@@ -142,7 +142,7 @@ def measure_time_n_v2(n_start, n_end, l, cycle_or_not):
             TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l)
             t1 = timeit.default_timer()
             print "algo: enumerate all"
-            CQ.cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l, True)
+            CQ.cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l, False)
             t3 = timeit.default_timer()
 
             print ('Time any-k split: ', t_preprocess + sum(time_for_each))
@@ -269,5 +269,5 @@ if __name__ == "__main__":
     #measure_time_grow_n()
     #plot(2, 15)
     #measure_time_grow_v2()
-    measure_time_n_v2(3, 50, 5, True)
-    measure_time_n_v2(3, 50, 5, False)
+    measure_time_n_v2(3, 50, 3, True)
+    measure_time_n_v2(3, 50, 4, False)

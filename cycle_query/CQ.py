@@ -216,7 +216,7 @@ def heuristic_build_l_cycle(tuple2weight, rel2tuple, tu2down_neis, l):
 def heuristic_build_l_path(tuple2weight, rel2tuple, tu2down_neis, l):
     # build a dictionary from tuple down to the remaining weight not including tuple
     # assumption: no tuple appear in different relations
-
+    assert l >= 4
     tuple2rem = dict()
 
     for which_relation in range(l-2, -1, -1): # when l = 4, which_relation will be 2, 1, 0
@@ -234,6 +234,7 @@ def heuristic_build_l_path(tuple2weight, rel2tuple, tu2down_neis, l):
 
 
 def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l):
+    assert l >= 4
     # push PEIs into a priority queue, pop k heaviest full items
     # [DESIGN CHOICE] pop the lightest element as consistent with heapq native! If paper is about heaviest, can modify later.
     TOP_K = []
@@ -365,7 +366,8 @@ def cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l,
     else:
         l_part_2weight = simple_join(rel2tuple, tuple2weight, tu2down_neis, 1, l-2)
     for l_part in l_part_2weight:
-        assert len(l_part) == l-3
+        if l!= 3:
+            assert len(l_part) == l-3
         tu_start = l_part[0]
         tu_end = l_part[-1]
         if tu_start not in tu2up_neis or tu_end not in tu2down_neis:
@@ -426,7 +428,12 @@ def cycle_path_recursive(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, s
     # NPRR recursive join on path as described. l-lenth path
     # will be used by cycle as a subroutine
     results = []
+
     results2wgt = dict()
+    print "l-start=" + str(l-start)
+    assert l >= 4
+    # this resursive is an alternative implementation that got purged.
+    # works correctly on 4+ cycles verified, Do not decide to update further
     if l-start == 1:
         for tu in rel2tuple['R' + str(start)]:
             result = [tu]
