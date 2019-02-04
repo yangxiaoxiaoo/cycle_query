@@ -228,9 +228,11 @@ def plot(mode, target):
                 line_2, = plt.plot(results_count, time_for_all, 'b--', label='Line 2')
                 plt.legend([line_1, line_2], ['any-k', 'full enumeration'])
                 if cycle_or_not:
-                    plt.title('d_max = '+ str(n) + ', l = ' + str(l) + ', cycle')
+                    plt.title('N = '+ str(n) + ', l = ' + str(l) + ', cycle')
                 else:
-                    plt.title('d_max = ' + str(n) + ', l = ' + str(l) + ', path')
+                    plt.title('N = ' + str(n) + ', l = ' + str(l) + ', path')
+                plt.xlabel('k')
+                plt.ylabel('Time/Sec')
                 plt.show()
     if mode == 2:
         # plot how computational time for different l changes on the same database:
@@ -269,5 +271,7 @@ if __name__ == "__main__":
     #measure_time_grow_n()
     #plot(2, 15)
     #measure_time_grow_v2()
-    measure_time_n_v2(3, 50, 3, True)
-    measure_time_n_v2(3, 50, 4, False)
+
+    #measure_time_n_v2(3, 50, 5, True) #3-cycle
+    #measure_time_n_v2(3, 50, 5, False) #4-path
+    plot(1, 30)

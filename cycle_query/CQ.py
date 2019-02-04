@@ -401,6 +401,10 @@ def cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l,
                                                + tuple2weight[(l_part[-1][1], close_tu[0])] + tuple2weight[close_tu]
                     results.append(path)
     values = []
+
+
+    #fair comparison 
+    
     PEIs = []
     for result in results:
         print result
@@ -420,6 +424,7 @@ def cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l,
     sorted_PEIs = sorted(PEIs)
     for i in range(min(len(sorted_values), k)):
         print sorted_PEIs[i].wgt
+
 
     return results
 
