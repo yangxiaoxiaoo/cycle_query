@@ -57,6 +57,30 @@ class PEI_path():
         # then return False, else return true.
         return new_tuple in tuple2rem
 
+    def successor(self, sortedmap, tuple2weight, tuple2rem):
+        # return a successor of current instance if there exist one, return None if not.
+        # input: sorted-map comes from subtree-weight tuple2rem.
+        # TODO: write in CQ.py a builder that sort and construct the map to next.
+        cur_frontier = self.instance.popfront()
+
+        if cur_frontier == None: # empty path cannot be popped.
+            print "empty path considered? Please double check..."
+            return None
+        if cur_frontier in sortedmap:
+            successor_frontier = sortedmap[cur_frontier]  # there is a successor
+            assert self.mergable(successor_frontier, tuple2rem)
+            self.instance.insert_relation(successor_frontier)
+            self.wgt += (tuple2weight[successor_frontier] - tuple2weight[cur_frontier])
+            self.hrtc = self.instance.max_wgt_rem(tuple2rem)
+        else:
+            return None
+
+    def expand(self, sortedmap):
+        # TODO: make sure that sortedmap[('#', l , prev)] gives the top result in Rl whose attribute hashes from prev
+
+
+
+
 @functools.total_ordering
 class PEI_cycle():
     # any-length cycle
@@ -126,6 +150,18 @@ class path_instance():
     def frontier(self):
         assert self.length < self.goal_length
         return self.R_list[self.length - 1]
+
+    def popfront(self):
+        if self.completion:
+            self.completion = False
+        if self.length == 0:
+            # no front to pop
+            return None
+        else:
+            front = self.R_list[self.length - 1]
+            self.R_list[self.length - 1] = (0, 0)
+            self.length -= 1
+            return front
 
 
     def insert_relation(self, newtuple):
