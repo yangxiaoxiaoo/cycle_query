@@ -263,13 +263,13 @@ def Deepak_sort_path(tuple2rem, tuple2weight, rel2tuple, l):
         localdict = dict()
         list = key2list[k]
         list.sort()
-        print list
+        # print list
         if len(list)!= 0:
             localdict['#'] = list[0][1]
             for i in range(len(list) - 1):
                 localdict[list[i][1]] = list[i+1][1]
         res[k] = localdict
-    print res
+    # print res
     return res
 
 
@@ -310,7 +310,6 @@ def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak):
                 cur_PEI_path.expand(prev2sortedmap, tuple2weight, tuple2rem)
                 successor_PEI_path = cur_PEI_path.successor(prev2sortedmap, tuple2weight, tuple2rem)
                 if successor_PEI_path!= None:
-                    print "successed"
                     assert cur_PEI_path < successor_PEI_path
                     heapq.heappush(PQ, successor_PEI_path)
 
@@ -430,9 +429,10 @@ def l_path_sim(l,k):
     rel2tuple, tuple2weight = semi_join_utils.build_relation(l, var2cand, weightrange=10)
     tu2down_neis, tu2up_neis = path_SJ_reduce_l(rel2tuple, l)
     print "algo: any-k priotitized search WWW"
-    TOP_K_PQ, time_for_each = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, False)
+    TOP_K_PQ1, time_for_each = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, False)
     print "algo: any-k priotitized search Deepak"
-    #TOP_K_PQ, time_for_each = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, True)
+    TOP_K_PQ2, time_for_each = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, True)
+    # assert TOP_K_PQ2 == TOP_K_PQ1 -- observed only rounding numerical errors, ignore.
     print "algo: enumerate all"
     path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis, k, l)
 

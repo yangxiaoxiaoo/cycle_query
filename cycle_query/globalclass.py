@@ -92,23 +92,15 @@ class PEI_path():
         frontier = self.instance.frontier()
         sortedmap = prev2sortedmap[self.instance.length, frontier[1]]
         head = sortedmap['#']
-        print head
+
 
         assert self.mergable(head, tuple2rem)
-        old_key = self.wgt + self.hrtc
-        print self.wgt
-        print self.hrtc
-        print old_key
 
 
         self.instance.insert_relation(head)
         self.wgt += tuple2weight[head]
         self.hrtc = self.instance.max_wgt_rem(tuple2rem)
-        new_key = self.wgt + self.hrtc
-        print self.wgt
-        print self.hrtc
-        print self.instance.length
-        assert old_key == new_key
+
 
 
 
