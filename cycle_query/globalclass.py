@@ -1,4 +1,5 @@
 import functools
+import copy
 
 @functools.total_ordering
 class PEI():
@@ -57,26 +58,57 @@ class PEI_path():
         # then return False, else return true.
         return new_tuple in tuple2rem
 
-    def successor(self, sortedmap, tuple2weight, tuple2rem):
+
+    def successor(self, prev2sortedmap, tuple2weight, tuple2rem):
         # return a successor of current instance if there exist one, return None if not.
         # input: sorted-map comes from subtree-weight tuple2rem.
         # TODO: write in CQ.py a builder that sort and construct the map to next.
-        cur_frontier = self.instance.popfront()
+        frontier = self.instance.frontier()
+        sortedmap = prev2sortedmap[self.instance.length -1 ,frontier[0]]
+        res = copy.deepcopy(self)
+        cur_frontier = res.instance.popfront()
 
         if cur_frontier == None: # empty path cannot be popped.
             print "empty path considered? Please double check..."
             return None
         if cur_frontier in sortedmap:
             successor_frontier = sortedmap[cur_frontier]  # there is a successor
-            assert self.mergable(successor_frontier, tuple2rem)
-            self.instance.insert_relation(successor_frontier)
-            self.wgt += (tuple2weight[successor_frontier] - tuple2weight[cur_frontier])
-            self.hrtc = self.instance.max_wgt_rem(tuple2rem)
+            assert res.mergable(successor_frontier, tuple2rem)
+            res.instance.insert_relation(successor_frontier)
+            res.wgt += (tuple2weight[successor_frontier] - tuple2weight[cur_frontier])
+            res.hrtc = res.instance.max_wgt_rem(tuple2rem)
+            return res
         else:
+            #print sortedmap
+            #print cur_frontier -- verified that cur_frontier is always the last one in sortedmap
             return None
 
-    def expand(self, sortedmap):
-        # TODO: make sure that sortedmap[('#', l , prev)] gives the top result in Rl whose attribute hashes from prev
+    def expand(self, prev2sortedmap, tuple2weight, tuple2rem):
+        # TODO: make sure that prev2sortedmap[(relation_index, prev)] gives a sorted map matching prev (join attribute)
+        #  sortedmap['#'] gives the top result in Rl whose attribute hashes from prev
+        assert self.instance.length < self.goal_length
+
+        next_relation = 'R'+ str(self.instance.length)
+        frontier = self.instance.frontier()
+        sortedmap = prev2sortedmap[self.instance.length, frontier[1]]
+        head = sortedmap['#']
+        print head
+
+        assert self.mergable(head, tuple2rem)
+        old_key = self.wgt + self.hrtc
+        print self.wgt
+        print self.hrtc
+        print old_key
+
+
+        self.instance.insert_relation(head)
+        self.wgt += tuple2weight[head]
+        self.hrtc = self.instance.max_wgt_rem(tuple2rem)
+        new_key = self.wgt + self.hrtc
+        print self.wgt
+        print self.hrtc
+        print self.instance.length
+        assert old_key == new_key
 
 
 
@@ -148,7 +180,7 @@ class path_instance():
         self.goal_length = l
 
     def frontier(self):
-        assert self.length < self.goal_length
+        assert self.length <= self.goal_length
         return self.R_list[self.length - 1]
 
     def popfront(self):

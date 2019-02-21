@@ -187,14 +187,16 @@ def heuristic_build_l_cycle(tuple2weight, rel2tuple, tu2down_neis, l):
     breakpoints = set()
     for tu in rel2tuple['R'+ str(l-1)]:
         breakpoints.add(tu[1])
+        tuple2rem[(tu, tu[1])] = 0
 
     for tu in rel2tuple['R'+ str(l-2)]:
         for tu_down in tu2down_neis[tu]:
-            new_val = tuple2weight[tu_down]
-            if (tu, tu_down[1]) in tuple2rem:
-                tuple2rem[(tu, tu_down[1])] = min(tuple2rem[(tu, tu_down[1])], new_val)
-            else:
-                tuple2rem[(tu, tu_down[1])] = new_val
+            if (tu_down, tu_down[1]) in tuple2rem:
+                new_val = tuple2weight[tu_down] + tuple2rem[tu_down, tu_down[1]]
+                if (tu, tu_down[1]) in tuple2rem:
+                    tuple2rem[(tu, tu_down[1])] = min(tuple2rem[(tu, tu_down[1])], new_val)
+                else:
+                    tuple2rem[(tu, tu_down[1])] = new_val
 
     for which_relation in range(l-3, -1, -1): # when l = 4, which_relation will be 1, 0
         this_relation_name = 'R'+str(which_relation)
@@ -219,11 +221,14 @@ def heuristic_build_l_path(tuple2weight, rel2tuple, tu2down_neis, l):
     assert l >= 4
     tuple2rem = dict()
 
+    for tu in rel2tuple['R' + str(l-1)]:
+        tuple2rem[tu] = 0
+
     for which_relation in range(l-2, -1, -1): # when l = 4, which_relation will be 2, 1, 0
         this_relation_name = 'R'+str(which_relation)
         for tu in rel2tuple[this_relation_name]:
             for tu_down in tu2down_neis[tu]:
-                new_val = tuple2weight[tu_down]
+                new_val = tuple2weight[tu_down] + tuple2rem[tu_down]
                 if tu in tuple2rem:
                     tuple2rem[tu] = min(tuple2rem[tu], new_val)
                 else:
@@ -232,8 +237,44 @@ def heuristic_build_l_path(tuple2weight, rel2tuple, tu2down_neis, l):
 
     return tuple2rem
 
+def Deepak_sort_path(tuple2rem, tuple2weight, rel2tuple, l):
+    # l is the goal length, build sorted subtree weights for R0, R1...Rl-1
+    key2list = dict() # first map all keys in the output dictionary into a list of (subtree-weight, tuple)
 
-def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l):
+    for i in range(0, l):
+
+        relation = 'R' + str(i)
+        if i == l-1:
+            for t in rel2tuple[relation]:
+                if (i, t[0]) in key2list:
+                    key2list[i, t[0]].append((tuple2weight[t], t))
+                else:
+                    key2list[i, t[0]] = [(tuple2weight[t], t)]
+
+        else:
+            for t in rel2tuple[relation]:
+                if (i, t[0]) in key2list:
+                    key2list[i, t[0]].append((tuple2weight[t] + tuple2rem[t], t))
+                else:
+                    key2list[i, t[0]] = [(tuple2weight[t] + tuple2rem[t], t)]
+
+    res = dict()
+    for k in key2list:
+        localdict = dict()
+        list = key2list[k]
+        list.sort()
+        print list
+        if len(list)!= 0:
+            localdict['#'] = list[0][1]
+            for i in range(len(list) - 1):
+                localdict[list[i][1]] = list[i+1][1]
+        res[k] = localdict
+    print res
+    return res
+
+
+def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak):
+    #Deepak = True: only push sorted successors.
     assert l >= 4
     # push PEIs into a priority queue, pop k heaviest full items
     # [DESIGN CHOICE] pop the lightest element as consistent with heapq native! If paper is about heaviest, can modify later.
@@ -242,33 +283,69 @@ def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l):
     start_time = timeit.default_timer()
     PQ = []
     tuple2rem = heuristic_build_l_path(tuple2weight, rel2tuple, tu2down_neis, l)
-    for tu in rel2tuple['R0']:
-        if tu in tuple2rem:
-            heapq.heappush(PQ, globalclass.PEI_path(tu, tuple2weight[tu], tuple2rem[tu], l))
+
+    if Deepak:  #push only "null pointed first heads"
+        prev2sortedmap = Deepak_sort_path(tuple2rem, tuple2weight, rel2tuple, l)
+        for k in prev2sortedmap:
+            if k[0] == 0:
+                tu = prev2sortedmap[k]['#'] # first
+                heapq.heappush(PQ, globalclass.PEI_path(tu, tuple2weight[tu], tuple2rem[tu], l))
+
+    else:
+        for tu in rel2tuple['R0']:
+            if tu in tuple2rem:
+                heapq.heappush(PQ, globalclass.PEI_path(tu, tuple2weight[tu], tuple2rem[tu], l))
 
     while len(PQ) != 0:
         cur_PEI_path = heapq.heappop(PQ)
-        if cur_PEI_path.instance.completion:
+
+        if Deepak:
+            successor_PEI_path = cur_PEI_path.successor(prev2sortedmap, tuple2weight, tuple2rem)
+
+            if successor_PEI_path != None:
+                assert cur_PEI_path < successor_PEI_path
+                heapq.heappush(PQ, successor_PEI_path)
+
+            while not cur_PEI_path.instance.completion:
+                cur_PEI_path.expand(prev2sortedmap, tuple2weight, tuple2rem)
+                successor_PEI_path = cur_PEI_path.successor(prev2sortedmap, tuple2weight, tuple2rem)
+                if successor_PEI_path!= None:
+                    print "successed"
+                    assert cur_PEI_path < successor_PEI_path
+                    heapq.heappush(PQ, successor_PEI_path)
+
+            assert  cur_PEI_path.instance.completion
             TOP_K.append(cur_PEI_path)
+
             end_time = timeit.default_timer()
             time_for_each.append(end_time - start_time)
             start_time = end_time
             if len(TOP_K) == K:
                 break
-        elif cur_PEI_path.instance.length != l-1: # not completed, there is frontier, no need to check breakpoint
-            frontier = cur_PEI_path.instance.frontier()
-            for neighbor in tu2down_neis[frontier]:
-                if cur_PEI_path.mergable(neighbor, tuple2rem):
-                    new_PEI_path = copy.deepcopy(cur_PEI_path)
-                    new_PEI_path.merge(neighbor, tuple2weight, tuple2rem)
-                    heapq.heappush(PQ, new_PEI_path)
 
-        else:  # length == l-1, last growth.
-            frontier = cur_PEI_path.instance.frontier()
-            for neighbor in tu2down_neis[frontier]:
-                new_PEI_path = copy.deepcopy(cur_PEI_path)
-                new_PEI_path.merge(neighbor, tuple2weight, tuple2rem)
-                heapq.heappush(PQ, new_PEI_path)
+        else:  # push all into PQ
+            if cur_PEI_path.instance.completion:
+                TOP_K.append(cur_PEI_path)
+                end_time = timeit.default_timer()
+                time_for_each.append(end_time - start_time)
+                start_time = end_time
+                if len(TOP_K) == K:
+                    break
+            else:
+                if cur_PEI_path.instance.length != l-1: # not completed, there is frontier, no need to check breakpoint
+                    frontier = cur_PEI_path.instance.frontier()
+                    for neighbor in tu2down_neis[frontier]:
+                        if cur_PEI_path.mergable(neighbor, tuple2rem):
+                            new_PEI_path = copy.deepcopy(cur_PEI_path)
+                            new_PEI_path.merge(neighbor, tuple2weight, tuple2rem)
+                            heapq.heappush(PQ, new_PEI_path)
+
+                else:  # length == l-1, last growth.
+                    frontier = cur_PEI_path.instance.frontier()
+                    for neighbor in tu2down_neis[frontier]:
+                        new_PEI_path = copy.deepcopy(cur_PEI_path)
+                        new_PEI_path.merge(neighbor, tuple2weight, tuple2rem)
+                        heapq.heappush(PQ, new_PEI_path)
     print "TOP K results are"
     for PEI_path in TOP_K:
         print PEI_path.wgt
@@ -348,12 +425,14 @@ def path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis,k, l):
 
 def l_path_sim(l,k):
     # simple simulation on l_simple path. Tested and can be referred to in experiments.
-    attr_card = [4, 2, 2, 4, 5]
+    attr_card = [3, 2, 3, 4, 5]
     var2cand = semi_join_utils.build_data(l, attr_card)
     rel2tuple, tuple2weight = semi_join_utils.build_relation(l, var2cand, weightrange=10)
     tu2down_neis, tu2up_neis = path_SJ_reduce_l(rel2tuple, l)
-    print "algo: any-k priotitized search"
-    TOP_K_PQ, time_for_each = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l)
+    print "algo: any-k priotitized search WWW"
+    TOP_K_PQ, time_for_each = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, False)
+    print "algo: any-k priotitized search Deepak"
+    #TOP_K_PQ, time_for_each = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, True)
     print "algo: enumerate all"
     path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis, k, l)
 
@@ -629,14 +708,15 @@ def l_cycle_split(l, k, test):
 
 def test_correctness():
     while True:
-        l_cycle_split(4, 3, test=True)
+        l_cycle_split(5, 3, test=True)
 
 
 if __name__ == "__main__":
-    #l_path_sim(5, 3)
+    l_path_sim(4, 12)
     #l_cycle_naive(5, 3)
     #l_cycle_split(5, 3, test=False)
-    test_correctness()
+
+    #test_correctness()
 
 
 
