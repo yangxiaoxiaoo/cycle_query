@@ -133,6 +133,52 @@ class PEI_cycle():
         # then return False, else return true.
         return (new_tuple, self.breakpoint) in tuple2rem
 
+    def successor(self, prev2sortedmap, tuple2weight, tuple2rem):
+        # return a successor of current instance if there exist one, return None if not.
+        # input: sorted-map comes from subtree-weight tuple2rem.
+        # TODO: write in CQ.py a builder that sort and construct the map to next.
+        frontier = self.instance.frontier()
+        if (self.instance.length -1 ,frontier[0], self.breakpoint) not in prev2sortedmap:
+            return None
+        sortedmap = prev2sortedmap[self.instance.length -1 ,frontier[0], self.breakpoint]
+        res = copy.deepcopy(self)
+        cur_frontier = res.instance.popfront()
+
+        if cur_frontier == None: # empty path cannot be popped.
+            print "empty path considered? Please double check..."
+            return None
+        if cur_frontier in sortedmap:
+            successor_frontier = sortedmap[cur_frontier]  # there is a successor
+            assert res.mergable(successor_frontier, tuple2rem)
+            res.instance.insert_relation(successor_frontier)
+            res.wgt += (tuple2weight[successor_frontier] - tuple2weight[cur_frontier])
+            res.hrtc = res.instance.max_wgt_rem(tuple2rem, self.breakpoint)
+            return res
+        else:
+            #print sortedmap
+            #print cur_frontier -- verified that cur_frontier is always the last one in sortedmap
+            return None
+
+    def expand(self, prev2sortedmap, tuple2weight, tuple2rem):
+        # TODO: make sure that prev2sortedmap[(relation_index, prev)] gives a sorted map matching prev (join attribute)
+        #  sortedmap['#'] gives the top result in Rl whose attribute hashes from prev
+        assert self.instance.length < self.goal_length
+
+        next_relation = 'R'+ str(self.instance.length)
+        frontier = self.instance.frontier()
+        if (self.instance.length, frontier[1], self.breakpoint) not in prev2sortedmap:
+            return None
+        sortedmap = prev2sortedmap[self.instance.length, frontier[1], self.breakpoint]
+        head = sortedmap['#']
+
+
+        assert self.mergable(head, tuple2rem)
+
+
+        self.instance.insert_relation(head)
+        self.wgt += tuple2weight[head]
+        self.hrtc = self.instance.max_wgt_rem(tuple2rem, self.breakpoint)
+
 
 
 @functools.total_ordering
@@ -253,6 +299,18 @@ class cycle_instance():
             return 0.0
         else:
             return tuple2rem[self.R_list[self.length-1], a]
+
+    def popfront(self):
+        if self.completion:
+            self.completion = False
+        if self.length == 0:
+            # no front to pop
+            return None
+        else:
+            front = self.R_list[self.length - 1]
+            self.R_list[self.length - 1] = (0, 0)
+            self.length -= 1
+            return front
 
 
 
