@@ -169,7 +169,7 @@ def simple_join(rel2tuple, tuple2weight, tu2down_neis, start, end):
 
 
 def priority_search_l_cycle_light_init(rel2tuple, tuple2weight, tu2down_neis, l, Deepak):
-    print rel2tuple
+    #print rel2tuple
     # compute a set of I1_list, a set of I2_list
     # for each I1_list, the max I2_list weight for it, a list of all matching I2_list
     PQ = []
@@ -202,7 +202,6 @@ def priority_search_l_cycle_light_init(rel2tuple, tuple2weight, tu2down_neis, l,
         bp2sortedmap = dict()
         return bp2sortedmap, breakpoints2I2, I2_list2wgt, PQ
     else:
-        print "..."
         key2list = dict()
         bp2sortedmap = dict()
         for bp in breakpoints2I2:
