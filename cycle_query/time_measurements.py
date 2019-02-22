@@ -234,6 +234,7 @@ def plot(mode, target):
                 plt.xlabel('k')
                 plt.ylabel('Time/Sec')
                 plt.show()
+
     if mode == 2:
         # plot how computational time for different l changes on the same database:
         plt.xlabel('l')
