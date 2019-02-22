@@ -62,7 +62,6 @@ class PEI_path():
     def successor(self, prev2sortedmap, tuple2weight, tuple2rem):
         # return a successor of current instance if there exist one, return None if not.
         # input: sorted-map comes from subtree-weight tuple2rem.
-        # TODO: write in CQ.py a builder that sort and construct the map to next.
         frontier = self.instance.frontier()
         sortedmap = prev2sortedmap[self.instance.length -1 ,frontier[0]]
         res = copy.deepcopy(self)
@@ -84,7 +83,6 @@ class PEI_path():
             return None
 
     def expand(self, prev2sortedmap, tuple2weight, tuple2rem):
-        # TODO: make sure that prev2sortedmap[(relation_index, prev)] gives a sorted map matching prev (join attribute)
         #  sortedmap['#'] gives the top result in Rl whose attribute hashes from prev
         assert self.instance.length < self.goal_length
 
@@ -136,9 +134,9 @@ class PEI_cycle():
     def successor(self, prev2sortedmap, tuple2weight, tuple2rem):
         # return a successor of current instance if there exist one, return None if not.
         # input: sorted-map comes from subtree-weight tuple2rem.
-        # TODO: write in CQ.py a builder that sort and construct the map to next.
         frontier = self.instance.frontier()
-        if (self.instance.length -1 ,frontier[0], self.breakpoint) not in prev2sortedmap:
+        assert self != None
+        if (self.instance.length - 1 ,frontier[0], self.breakpoint) not in prev2sortedmap:
             return None
         sortedmap = prev2sortedmap[self.instance.length -1 ,frontier[0], self.breakpoint]
         res = copy.deepcopy(self)
@@ -160,14 +158,17 @@ class PEI_cycle():
             return None
 
     def expand(self, prev2sortedmap, tuple2weight, tuple2rem):
-        # TODO: make sure that prev2sortedmap[(relation_index, prev)] gives a sorted map matching prev (join attribute)
         #  sortedmap['#'] gives the top result in Rl whose attribute hashes from prev
         assert self.instance.length < self.goal_length
 
         next_relation = 'R'+ str(self.instance.length)
         frontier = self.instance.frontier()
         if (self.instance.length, frontier[1], self.breakpoint) not in prev2sortedmap:
-            return None
+            # debug only: check voilation of invariant
+            print prev2sortedmap
+            print "not have?"
+            print (self.instance.length, frontier[1], self.breakpoint)
+            return 1
         sortedmap = prev2sortedmap[self.instance.length, frontier[1], self.breakpoint]
         head = sortedmap['#']
 
@@ -178,6 +179,7 @@ class PEI_cycle():
         self.instance.insert_relation(head)
         self.wgt += tuple2weight[head]
         self.hrtc = self.instance.max_wgt_rem(tuple2rem, self.breakpoint)
+        return 0
 
 
 
@@ -195,14 +197,37 @@ class PEI_lightcycle(PEI_cycle):
         self.hrtc = hrtc
         self.goal_length = l
         self.breakpointpair = (I1_list[0][0], I1_list[-1][1])
+        self.i1 = I1_list
+        self.i1_wgt = I1_wgt
+        self.i1_hrtc = hrtc
+
 
     def bigmerge(self, I2_list, I2_wgt):
         for tuple in I2_list:
             self.instance.insert_relation(tuple)
         self.wgt += I2_wgt
         self.hrtc = 0
+        self.i2 = I2_list
+
         assert self.instance.completion
 
+    def bigsucc(self, breakpoints2I2, I2_list2wgt, bp2sortedmap):
+        sortedmap = bp2sortedmap[self.breakpointpair]
+        res = PEI_lightcycle(self.i1[0], 0, 0, self.goal_length)
+        res.biginit(self.i1, self.i1_wgt, self.i1_hrtc, self.goal_length)
+        if self.i2 in sortedmap:
+            succ_i2 = sortedmap[self.i2]
+            res.bigmerge(succ_i2, I2_list2wgt[succ_i2])
+            return res
+        else:
+            return None
+
+    def bigexpand(self, breakpoints2I2, I2_list2wgt, bp2sortedmap):
+        if self.breakpointpair not in bp2sortedmap:
+            return None
+        sortedmap = bp2sortedmap[self.breakpointpair]
+        head = sortedmap['#']
+        self.bigmerge(head, I2_list2wgt[head])
 
 class path_instance():
 
@@ -272,7 +297,7 @@ class cycle_instance():
         self.goal_length = l
 
     def frontier(self):
-        assert self.length < self.goal_length
+        assert self.length <= self.goal_length
         return self.R_list[self.length - 1]
 
     def insert_relation(self, newtuple):

@@ -79,6 +79,7 @@ def priority_search_l_cycle_naive_init(rel2tuple, tuple2weight, tu2down_neis, l,
 
     if Deepak:
         prev2sortedmap = Deepak_sort_cycle(tuple2rem, tuple2weight, rel2tuple, l)
+
         for k in prev2sortedmap:
             if k[0] == 0:
                 tu = prev2sortedmap[k]['#']  # first
@@ -101,16 +102,26 @@ def priority_search_l_cycle_naive_next(tuple2weight, tu2down_neis, l, PQ, tuple2
         cur_PEI_cycle = heapq.heappop(PQ)
 
         if Deepak:
+
             successor_PEI_cycle = cur_PEI_cycle.successor(prev2sortedmap, tuple2weight, tuple2rem)
             if successor_PEI_cycle != None:
                 heapq.heappush(PQ, successor_PEI_cycle)
+                assert successor_PEI_cycle > cur_PEI_cycle
             while not cur_PEI_cycle.instance.completion:
-                cur_PEI_cycle.expand(prev2sortedmap, tuple2weight, tuple2rem)
+                #print cur_PEI_cycle.instance.length
+                state = cur_PEI_cycle.expand(prev2sortedmap, tuple2weight, tuple2rem)
+                if state == 1:
+                    print "type error! debug only"
+                    break
+                #print cur_PEI_cycle.instance.length
                 successor_PEI_cycle = cur_PEI_cycle.successor(prev2sortedmap, tuple2weight, tuple2rem)
                 if successor_PEI_cycle != None:
                     heapq.heappush(PQ, successor_PEI_cycle)
+                    assert successor_PEI_cycle > cur_PEI_cycle
+
             assert cur_PEI_cycle.instance.completion
             return cur_PEI_cycle
+
 
         else:
             if cur_PEI_cycle.instance.completion:
@@ -157,7 +168,7 @@ def simple_join(rel2tuple, tuple2weight, tu2down_neis, start, end):
     return list2wgt
 
 
-def priority_search_l_cycle_light_init(rel2tuple, tuple2weight, tu2down_neis, l):
+def priority_search_l_cycle_light_init(rel2tuple, tuple2weight, tu2down_neis, l, Deepak):
     print rel2tuple
     # compute a set of I1_list, a set of I2_list
     # for each I1_list, the max I2_list weight for it, a list of all matching I2_list
@@ -187,20 +198,58 @@ def priority_search_l_cycle_light_init(rel2tuple, tuple2weight, tu2down_neis, l)
             heapq.heappush(PQ, curPEI)
     # print breakpoints2I2
     # print PQ
-    return breakpoints2I2, I2_list2wgt, PQ
+    if not Deepak:
+        bp2sortedmap = dict()
+        return bp2sortedmap, breakpoints2I2, I2_list2wgt, PQ
+    else:
+        print "..."
+        key2list = dict()
+        bp2sortedmap = dict()
+        for bp in breakpoints2I2:
+            key2list[bp] = []
+            for i2 in breakpoints2I2[bp]:
+                key2list[bp].append((I2_list2wgt[i2], i2))
+        for k in key2list:
+            localdict = dict()
+            list = key2list[k]
+            list.sort()
+            if len(list) != 0:
+                localdict['#'] = list[0][1]
+                for i in range(len(list) - 1):
+                    localdict[list[i][1]] = list[i + 1][1]
+            bp2sortedmap[k] = localdict
+        return bp2sortedmap, breakpoints2I2, I2_list2wgt, PQ
 
 
-def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, PQ):
+
+def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, PQ, bp2sortedmap, Deepak):
+    print '....'
     t_start = timeit.default_timer()
     while len(PQ) != 0:
+        print "?"
         cur_PEI_cycle = heapq.heappop(PQ)
-        if cur_PEI_cycle.instance.completion:
+
+        if Deepak:
+            #successor_PEI_cycle = cur_PEI_cycle.bigsucc(breakpoints2I2, I2_list2wgt, bp2sortedmap)
+            #if successor_PEI_cycle != None:
+            #    heapq.heappush(PQ, successor_PEI_cycle)
+            cur_PEI_cycle.bigexpand(breakpoints2I2, I2_list2wgt, bp2sortedmap)
+            if not cur_PEI_cycle:
+                continue
+            assert cur_PEI_cycle.instance.completion
+            successor_PEI_cycle = cur_PEI_cycle.bigsucc(breakpoints2I2, I2_list2wgt, bp2sortedmap)
+            if successor_PEI_cycle != None:
+                heapq.heappush(PQ, successor_PEI_cycle)
             return cur_PEI_cycle
+
         else:
-            for I2_list in breakpoints2I2[cur_PEI_cycle.breakpointpair]:
-                new_PEI = copy.deepcopy(cur_PEI_cycle)
-                new_PEI.bigmerge(I2_list, I2_list2wgt[tuple(I2_list)])
-                heapq.heappush(PQ, new_PEI)
+            if cur_PEI_cycle.instance.completion:
+                return cur_PEI_cycle
+            else:
+                for I2_list in breakpoints2I2[cur_PEI_cycle.breakpointpair]:
+                    new_PEI = copy.deepcopy(cur_PEI_cycle)
+                    new_PEI.bigmerge(I2_list, I2_list2wgt[tuple(I2_list)])
+                    heapq.heappush(PQ, new_PEI)
     t_end = timeit.default_timer()
     return t_end - t_start
 
@@ -276,7 +325,8 @@ def Deepak_sort_cycle(tuple2rem, tuple2weight, rel2tuple, l):
             for i in range(len(list) - 1):
                 localdict[list[i][1]] = list[i+1][1]
         res[k] = localdict
-    # print res
+    #print "sorted cycle list is "
+    #print res
     return res
 
 
@@ -659,6 +709,7 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak):
     TOP_K = []
     time_for_each = []
     prev2sortedmap = None
+    prev2sortedmaps = []
 
     time_start = timeit.default_timer()
     for partition_index in range(l):
@@ -670,13 +721,15 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak):
 
         if Deepak:
             prev2sortedmap, tuple2rem, PQ = priority_search_l_cycle_naive_init(rotated_subdatabase, tuple2weight, tu2down_neis, l, Deepak)
+            assert type(prev2sortedmap) == dict
+            prev2sortedmaps.append(prev2sortedmap)
         else:
             tuple2rem, PQ = priority_search_l_cycle_naive_init(rotated_subdatabase, tuple2weight, tu2down_neis, l, Deepak)
         small_PQ_list.append(PQ)  # small_PQ_list[i] is i-th partition's local PQ.
         tuple2rem_list.append(tuple2rem)  # this is different for subdatabases, need to keep.
     # all light case
     tu2down_neis, tu2up_neis = cycle_SJ_reduce_l(partitions[l], l)
-    breakpoints2I2, I2_list2wgt, PQ = priority_search_l_cycle_light_init(partitions[l], tuple2weight, tu2down_neis, l)
+    bp2sortedmap, breakpoints2I2, I2_list2wgt, PQ = priority_search_l_cycle_light_init(partitions[l], tuple2weight, tu2down_neis, l, Deepak)
     small_PQ_list.append(PQ)
 
     # start global search
@@ -704,9 +757,16 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak):
         if head_values[top_pos] == 99999999:  # another way to tell all empty..
             break
         if top_pos != l:  # regular partition
+            if Deepak:
+                prev2sortedmap = prev2sortedmaps[top_pos]
             next_result = priority_search_l_cycle_naive_next \
                 (tuple2weight, tu2down_neis_list[top_pos], l, small_PQ_list[top_pos], tuple2rem_list[top_pos], prev2sortedmap, Deepak)
-            if isinstance(next_result, globalclass.PEI_cycle):  # when there is no next, maybe nontype.
+
+            #if len(TOP_K)!= 0 and next_result.wgt == TOP_K[-1].wgt:
+            #    print next_result.instance.R_list
+            #    print TOP_K[-1].instance.R_list
+            #debug usage only
+            if isinstance(next_result, globalclass.PEI_cycle) and (len(TOP_K)== 0 or len(TOP_K)!= 0 and next_result.instance.R_list != TOP_K[-1].instance.R_list):  # when there is no next, maybe nontype.
                 TOP_K.append(next_result)
                 time_end = timeit.default_timer()
                 time_for_each.append(time_end - time_start)
@@ -715,8 +775,8 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak):
                 head_values[top_pos] = 99999999
         else:  # all light partition
             print "come to the all light"
-            next_result = priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, small_PQ_list[l])
-            if isinstance(next_result, globalclass.PEI_lightcycle):  # when there is no next, maybe nontype.
+            next_result = priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, small_PQ_list[l], bp2sortedmap, Deepak)
+            if isinstance(next_result, globalclass.PEI_lightcycle) and (len(TOP_K)== 0 or len(TOP_K)!= 0 and next_result.instance.R_list != TOP_K[-1].instance.R_list):  # when there is no next, maybe nontype.
                 TOP_K.append(next_result)
                 time_end = timeit.default_timer()
                 time_for_each.append(time_end - time_start)
@@ -762,10 +822,15 @@ def l_cycle_split(l, k, test):
         TOP_K_PQ2 = semi_join_utils.priority_search_4(k, rel2tuple, tuple2weight, tu2down_neis4)
         cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis4, tu2down_neis4, k, l, True)
         cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis4, tu2down_neis4, k, l, False)
-    print "Deepak improved cycles"
-    TOP_K, time_for_each = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, True)
+
     print "previous cycles"
     TOP_K, time_for_each = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, False)
+    print "TOP K results are"
+    for PEI in TOP_K:
+        print PEI.wgt
+
+    print "Deepak improved cycles"
+    TOP_K, time_for_each = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, True)
 
     print "TOP K results are"
     for PEI in TOP_K:
