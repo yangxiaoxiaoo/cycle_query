@@ -109,10 +109,13 @@ def measure_time_n_v2(n_start, n_end, l, cycle_or_not):
         # var2cand = semi_join_utils.build_data(l, attr_card)
         # rel2tuple, tuple2weight = semi_join_utils.build_relation(l, var2cand, weightrange=10)
 
-        if cycle_or_not:
-            queryType = "Cycle"
-        else:
-            queryType = "Path"
+        #if cycle_or_not:
+        #    queryType = "Cycle"
+        #else:
+        #    queryType = "Path"
+
+        #run cycle and path query on the same input dataset. also: generator mode has been verified for cycle
+        queryType = "Cycle"
         DensityOfEdges = "Full"
         edgeDistribution = "HardCase"
         rel2tuple, tuple2weight = DataGenerator.getDatabase\
@@ -126,20 +129,26 @@ def measure_time_n_v2(n_start, n_end, l, cycle_or_not):
         
         if not cycle_or_not:  # path case
             print "algo: any-k priotitized search"
+
+            t_start = timeit.default_timer()
+            tu2down_neis, tu2up_neis = CQ.path_SJ_reduce_l(rel2tuple, l)
+            t_end = timeit.default_timer()
+            t_preprocess = t_end - t_start
+
+            TOP_K, time_for_each = CQ.priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak=True)
+            TOP_K, time_for_each = CQ.priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak=False)
             t1 = timeit.default_timer()
-            TOP_K, time_for_each = CQ.priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l)
-            t2 = timeit.default_timer()
             print "algo: enumerate all"
             CQ.path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis, k, l)
             t3 = timeit.default_timer()
             print ('Time any-k: ', t_preprocess + sum(time_for_each))
-            t_full  =  t_preprocess + t3 - t2
+            t_full  =  t_preprocess + t3 - t1
             print ('Time enumerate: ', t_full)
 
         else:  # cycle
             # TODO: add any-k naive
             print "algo: any-k split version"
-            TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l)
+            TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True)
             t1 = timeit.default_timer()
             print "algo: enumerate all"
             CQ.cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l, False)
@@ -155,6 +164,7 @@ def measure_time_n_v2(n_start, n_end, l, cycle_or_not):
             pickle.dump(time_for_each, open("../time_any/" + str(n)+'_'+str(l) + '_cycle', 'wb'))
             pickle.dump(timetuple_full, open("../time_all/" + str(n) + '_' + str(l) + '_cycle', 'wb'))
         else:
+            print len(time_for_each)
             pickle.dump(time_for_each, open("../time_any/" + str(n) + '_' + str(l) + '_path', 'wb'))
             pickle.dump(timetuple_full, open("../time_all/" + str(n) + '_' + str(l) + '_path', 'wb'))
 
@@ -223,16 +233,16 @@ def plot(mode, target):
                     l_values_path.append(l)
 
             if mode == 1:
-                plt.plot(results_count, time_till_now, 'r--', results_count, time_for_all, 'b--')
-                line_1, = plt.plot(results_count, time_till_now, 'r--', label='line 1')
-                line_2, = plt.plot(results_count, time_for_all, 'b--', label='Line 2')
+                #plt.plot(time_till_now, results_count, 'r--', time_till_now, results_count, 'b--')
+                line_1, = plt.plot(time_till_now, results_count, 'r--', label='line 1')
+                line_2, = plt.plot(time_for_all, results_count, 'b--', label='Line 2')
                 plt.legend([line_1, line_2], ['any-k', 'full enumeration'])
                 if cycle_or_not:
                     plt.title('N = '+ str(n) + ', l = ' + str(l) + ', cycle')
                 else:
                     plt.title('N = ' + str(n) + ', l = ' + str(l) + ', path')
-                plt.xlabel('k')
-                plt.ylabel('Time/Sec')
+                plt.ylabel('k')
+                plt.xlabel('Time/Sec')
                 plt.show()
 
     if mode == 2:
@@ -273,6 +283,6 @@ if __name__ == "__main__":
     #plot(2, 15)
     #measure_time_grow_v2()
 
-    #measure_time_n_v2(3, 50, 5, True) #3-cycle
-    #measure_time_n_v2(3, 50, 5, False) #4-path
+    measure_time_n_v2(3, 50, 5, True) #5-cycle
+    #measure_time_n_v2(3, 50, 5, False) #5-path
     plot(1, 30)

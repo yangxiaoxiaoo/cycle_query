@@ -343,11 +343,12 @@ def heuristic_build_l_path(tuple2weight, rel2tuple, tu2down_neis, l):
         this_relation_name = 'R'+str(which_relation)
         for tu in rel2tuple[this_relation_name]:
             for tu_down in tu2down_neis[tu]:
-                new_val = tuple2weight[tu_down] + tuple2rem[tu_down]
-                if tu in tuple2rem:
-                    tuple2rem[tu] = min(tuple2rem[tu], new_val)
-                else:
-                    tuple2rem[tu] = new_val
+                if tu_down in tuple2rem:
+                    new_val = tuple2weight[tu_down] + tuple2rem[tu_down]
+                    if tu in tuple2rem:
+                        tuple2rem[tu] = min(tuple2rem[tu], new_val)
+                    else:
+                        tuple2rem[tu] = new_val
 
 
     return tuple2rem
@@ -368,10 +369,11 @@ def Deepak_sort_path(tuple2rem, tuple2weight, rel2tuple, l):
 
         else:
             for t in rel2tuple[relation]:
-                if (i, t[0]) in key2list:
-                    key2list[i, t[0]].append((tuple2weight[t] + tuple2rem[t], t))
-                else:
-                    key2list[i, t[0]] = [(tuple2weight[t] + tuple2rem[t], t)]
+                if t in tuple2rem:
+                    if (i, t[0]) in key2list:
+                        key2list[i, t[0]].append((tuple2weight[t] + tuple2rem[t], t))
+                    else:
+                        key2list[i, t[0]] = [(tuple2weight[t] + tuple2rem[t], t)]
 
     res = dict()
     for k in key2list:
@@ -389,6 +391,7 @@ def Deepak_sort_path(tuple2rem, tuple2weight, rel2tuple, l):
 
 
 def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak):
+
     #Deepak = True: only push sorted successors.
     assert l >= 4
     # push PEIs into a priority queue, pop k heaviest full items
@@ -400,6 +403,7 @@ def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak):
     tuple2rem = heuristic_build_l_path(tuple2weight, rel2tuple, tu2down_neis, l)
 
     if Deepak:  #push only "null pointed first heads"
+
         prev2sortedmap = Deepak_sort_path(tuple2rem, tuple2weight, rel2tuple, l)
         for k in prev2sortedmap:
             if k[0] == 0:
@@ -415,6 +419,7 @@ def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak):
         cur_PEI_path = heapq.heappop(PQ)
 
         if Deepak:
+
             successor_PEI_path = cur_PEI_path.successor(prev2sortedmap, tuple2weight, tuple2rem)
 
             if successor_PEI_path != None:
@@ -433,6 +438,7 @@ def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak):
 
             end_time = timeit.default_timer()
             time_for_each.append(end_time - start_time)
+
             start_time = end_time
             if len(TOP_K) == K:
                 break
