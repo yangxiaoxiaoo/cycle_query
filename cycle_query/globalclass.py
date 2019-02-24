@@ -227,6 +227,7 @@ class PEI_lightcycle(PEI_cycle):
             return None
         sortedmap = bp2sortedmap[self.breakpointpair]
         head = sortedmap['#']
+
         self.bigmerge(head, I2_list2wgt[head])
 
 class path_instance():

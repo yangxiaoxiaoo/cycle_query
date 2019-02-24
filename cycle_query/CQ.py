@@ -222,12 +222,9 @@ def priority_search_l_cycle_light_init(rel2tuple, tuple2weight, tu2down_neis, l,
 
 
 def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, PQ, bp2sortedmap, Deepak):
-    print '....'
     t_start = timeit.default_timer()
     while len(PQ) != 0:
-        print "?"
         cur_PEI_cycle = heapq.heappop(PQ)
-
         if Deepak:
             #successor_PEI_cycle = cur_PEI_cycle.bigsucc(breakpoints2I2, I2_list2wgt, bp2sortedmap)
             #if successor_PEI_cycle != None:
@@ -857,7 +854,7 @@ def test_correctness():
 if __name__ == "__main__":
     l_path_sim(4, 12)
     #l_cycle_naive(5, 3)
-    l_cycle_split(5, 3, test=False)
+    l_cycle_split(4, 3, test=False)
 
     #test_correctness()
 
