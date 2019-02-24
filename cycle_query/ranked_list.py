@@ -158,6 +158,9 @@ class ranked_list_treap(ranked_list_abstract):
 		tup = listOfTuples.pop()
 		if listOfTuples == []:
 			self.l.remove(key)	
+		self.curr_size -= 1
+		if (self.max_size != None):
+			self.max_size -= 1
 		return tup
 
 	## Adds an item to the ranked list
