@@ -10,8 +10,8 @@
 
 import abc
 import heapq
-#import treap
-#import blist
+import treap
+import blist
 
 class ranked_list_abstract():
 	__metaclass__ = abc.ABCMeta
