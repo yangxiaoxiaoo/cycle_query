@@ -125,12 +125,28 @@ def hrjn_main(relation2tuple, tuple2weight, k, l, data_struct, bound, verify = F
 	'''
 
 	## Initialize data structures
-	## 1. Priority Queue for results, when a join result exceeds the threshold it is moved to the outBuffer
+	## 1. Ranked list for results, when a join result exceeds the threshold it is moved to the outBuffer
 	## Results are in the form of (weight, list) where list is a list of values from R0 to R(l-1)
 	if bound:	
-		joinResults = ranked_list.ranked_list(data_struct, k)
+		if (data_struct == "pq"):
+			joinResults = ranked_list.ranked_list_pq(k)
+		elif (data_struct == "btree"):
+			joinResults = ranked_list.ranked_list_btree(k)
+		elif (data_struct == "treap"):
+			joinResults = ranked_list.ranked_list_treap(k)
+		else:
+			print "Data structure not supported!"
+			sys.exit(1)
 	else:
-		joinResults = ranked_list.ranked_list(data_struct)
+		if (data_struct == "pq"):
+			joinResults = ranked_list.ranked_list_pq()
+		elif (data_struct == "btree"):
+			joinResults = ranked_list.ranked_list_btree()
+		elif (data_struct == "treap"):
+			joinResults = ranked_list.ranked_list_treap()
+		else:
+			print "Data structure not supported!"
+			sys.exit(1)
 	outBuffer = []
 
 	## 2. Hash tables
