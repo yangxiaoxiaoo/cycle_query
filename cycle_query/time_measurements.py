@@ -136,7 +136,7 @@ def measure_time_n_v2(n_start, n_end, l, cycle_or_not):
             t_preprocess = t_end - t_start
 
             TOP_K, time_for_each = CQ.priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak=True)
-            TOP_K, time_for_each = CQ.priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak=False)
+            TOP_K, time_for_each_old = CQ.priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak=False)
             t1 = timeit.default_timer()
             print "algo: enumerate all"
             CQ.path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis, k, l)
@@ -149,6 +149,7 @@ def measure_time_n_v2(n_start, n_end, l, cycle_or_not):
             # TODO: add any-k naive
             print "algo: any-k split version"
             TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True)
+            TOP_K, time_for_each_old = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=False)
             t1 = timeit.default_timer()
             print "algo: enumerate all"
             CQ.cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l, False)
@@ -163,10 +164,13 @@ def measure_time_n_v2(n_start, n_end, l, cycle_or_not):
         if cycle_or_not:
             pickle.dump(time_for_each, open("../time_any/" + str(n)+'_'+str(l) + '_cycle', 'wb'))
             pickle.dump(timetuple_full, open("../time_all/" + str(n) + '_' + str(l) + '_cycle', 'wb'))
+            pickle.dump(time_for_each_old, open("../time_old/" + str(n) + '_' + str(l) + '_cycle', 'wb'))
+
         else:
             print len(time_for_each)
             pickle.dump(time_for_each, open("../time_any/" + str(n) + '_' + str(l) + '_path', 'wb'))
             pickle.dump(timetuple_full, open("../time_all/" + str(n) + '_' + str(l) + '_path', 'wb'))
+            pickle.dump(time_for_each_old, open("../time_old/" + str(n) + '_' + str(l) + '_path', 'wb'))
 
 
 
@@ -202,6 +206,7 @@ def plot(mode, target):
     for f in listdir('../time_any'):
         if isfile(join('../time_any', f)) and isfile(join('../time_all', f)):
             time_for_each = pickle.load(open(join('../time_any', f),'rb'))
+            time_for_each_old = pickle.load(open(join('../time_old', f),'rb'))
             timetuple_full = pickle.load(open(join('../time_all', f), 'rb'))
             n = int(f.split('_')[0])
             l = int(f.split('_')[1])
@@ -209,7 +214,9 @@ def plot(mode, target):
             time_for_all = []
             results_count = []
             time_till_now = []
+            time_till_now_old = []
             accumulated_time = 0
+            accumulated_time_old = 0 # not deepak improved
 
             if len(time_for_each) == 0:
                 print "no result for this query"
@@ -217,7 +224,10 @@ def plot(mode, target):
 
             for i in range(len(time_for_each)):
                 time_till_now.append(time_for_each[i] + accumulated_time)
+                time_till_now_old.append(time_for_each_old[i] + accumulated_time_old)
+
                 accumulated_time = time_for_each[i] + accumulated_time
+                accumulated_time_old = time_for_each_old[i] + accumulated_time_old
                 results_count.append(i+1)
                 time_for_all.append(timetuple_full[1])
             if n == target:
@@ -236,7 +246,9 @@ def plot(mode, target):
                 #plt.plot(time_till_now, results_count, 'r--', time_till_now, results_count, 'b--')
                 line_1, = plt.plot(time_till_now, results_count, 'r--', label='line 1')
                 line_2, = plt.plot(time_for_all, results_count, 'b--', label='Line 2')
-                plt.legend([line_1, line_2], ['any-k', 'full enumeration'])
+                line_3, = plt.plot(time_till_now_old, results_count, 'g--', label='Line 3')
+
+                plt.legend([line_1, line_2, line_3], ['any-k sort', 'full ranking', 'any-k max'])
                 if cycle_or_not:
                     plt.title('N = '+ str(n) + ', l = ' + str(l) + ', cycle')
                 else:
@@ -283,6 +295,6 @@ if __name__ == "__main__":
     #plot(2, 15)
     #measure_time_grow_v2()
 
-    measure_time_n_v2(3, 50, 5, True) #5-cycle
-    #measure_time_n_v2(3, 50, 5, False) #5-path
+    #measure_time_n_v2(3, 50, 5, True) #5-cycle
+    measure_time_n_v2(3, 50, 5, False) #5-path
     plot(1, 30)
