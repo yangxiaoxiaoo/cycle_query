@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-## Implementation of a ranked list which holds items of the form (weight, _)
+## Implementation of a ranked list which holds items of the tuple form (weight, _)
 ## Its size can be bound during initialization
 ## In that case, whenever the min item is popped, the maximum allowed size is reduced by one
 ## Currently supported data structures:
@@ -23,6 +23,12 @@ class ranked_list_abstract():
 	## Returns the minimum weight of all items stored
 	@abc.abstractmethod
 	def min_weight(self):
+		pass
+
+	## Returns an item of minimum weight without removing it
+	## If the minimum weight in the queue is known, it can be passed as an argument for better performance
+	@abc.abstractmethod
+	def peek_min(self, minWeight = None):
 		pass
 
 	## Removes an item of minimum weight from the list and returns it
@@ -50,6 +56,11 @@ class ranked_list_pq(ranked_list_abstract):
 	## Returns the minimum weight of all items stored
 	def min_weight(self):
 		return self.l[0][0]
+
+	## Returns an item of minimum weight without removing it
+	## If the minimum weight in the queue is known, it can be passed as an argument for better performance
+	def peek_min(self, minWeight = None):
+		return self.l[0]
 
 	## Removes an item of minimum weight from the list and returns it
 	## If the minimum weight in the queue is known, it can be passed as an argument for better performance
@@ -87,6 +98,11 @@ class ranked_list_btree(ranked_list_abstract):
 	def min_weight(self):
 		return self.l[0][0]
 
+	## Returns an item of minimum weight without removing it
+	## If the minimum weight in the queue is known, it can be passed as an argument for better performance
+	def peek_min(self, minWeight = None):
+		return self.l[0]
+
 	## Removes an item of minimum weight from the list and returns it
 	## If the minimum weight in the queue is known, it can be passed as an argument for better performance
 	def pop_min(self, minWeight = None):
@@ -119,6 +135,17 @@ class ranked_list_treap(ranked_list_abstract):
 	## Returns the minimum weight of all items stored
 	def min_weight(self):
 		return self.l.find_min()
+
+	## Returns an item of minimum weight without removing it
+	## If the minimum weight in the queue is known, it can be passed as an argument for better performance
+	def peek_min(self, minWeight = None):
+		if minWeight == None: 
+			key = self.l.find_min()
+		else: 
+			key = minWeight
+		listOfTuples = self.l[key]
+		tup = listOfTuples[0]
+		return tup
 
 	## Removes an item of minimum weight from the list and returns it
 	## If the minimum weight in the queue is known, it can be passed as an argument for better performance
