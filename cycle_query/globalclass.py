@@ -67,7 +67,7 @@ class PEI_path():
         res = copy.deepcopy(self)
         cur_frontier = res.instance.popfront()
 
-        if cur_frontier == None: # empty path cannot be popped.
+        if cur_frontier is None: # empty path cannot be popped.
             print "empty path considered? Please double check..."
             return None
         if cur_frontier in sortedmap:
@@ -135,7 +135,7 @@ class PEI_cycle():
         # return a successor of current instance if there exist one, return None if not.
         # input: sorted-map comes from subtree-weight tuple2rem.
         frontier = self.instance.frontier()
-        assert self != None
+        assert self is not None
         if (self.instance.length - 1 ,frontier[0], self.breakpoint) not in prev2sortedmap:
             return None
         sortedmap = prev2sortedmap[self.instance.length -1 ,frontier[0], self.breakpoint]

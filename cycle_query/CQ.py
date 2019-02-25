@@ -107,7 +107,7 @@ def priority_search_l_cycle_naive_next(tuple2weight, tu2down_neis, l, RL, tuple2
         if Deepak:
 
             successor_PEI_cycle = cur_PEI_cycle.successor(prev2sortedmap, tuple2weight, tuple2rem)
-            if successor_PEI_cycle != None:
+            if successor_PEI_cycle is not None:
                 RL.add((successor_PEI_cycle,))
                 assert successor_PEI_cycle > cur_PEI_cycle
             while not cur_PEI_cycle.instance.completion:
@@ -118,7 +118,7 @@ def priority_search_l_cycle_naive_next(tuple2weight, tu2down_neis, l, RL, tuple2
                     break
                 #print cur_PEI_cycle.instance.length
                 successor_PEI_cycle = cur_PEI_cycle.successor(prev2sortedmap, tuple2weight, tuple2rem)
-                if successor_PEI_cycle != None:
+                if successor_PEI_cycle is not None:
                     RL.add((successor_PEI_cycle,))
                     assert successor_PEI_cycle > cur_PEI_cycle
 
@@ -237,7 +237,7 @@ def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, RL, bp2sorte
                 continue
             assert cur_PEI_cycle.instance.completion
             successor_PEI_cycle = cur_PEI_cycle.bigsucc(breakpoints2I2, I2_list2wgt, bp2sortedmap)
-            if successor_PEI_cycle != None:
+            if successor_PEI_cycle is not None:
                 RL.add((successor_PEI_cycle,))
             return cur_PEI_cycle
 
@@ -422,14 +422,14 @@ def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak):
 
             successor_PEI_path = cur_PEI_path.successor(prev2sortedmap, tuple2weight, tuple2rem)
 
-            if successor_PEI_path != None:
+            if successor_PEI_path is not None:
                 assert cur_PEI_path < successor_PEI_path
                 RL.add((successor_PEI_path,))
 
             while not cur_PEI_path.instance.completion:
                 cur_PEI_path.expand(prev2sortedmap, tuple2weight, tuple2rem)
                 successor_PEI_path = cur_PEI_path.successor(prev2sortedmap, tuple2weight, tuple2rem)
-                if successor_PEI_path!= None:
+                if successor_PEI_path is not None:
                     assert cur_PEI_path < successor_PEI_path
                     RL.add((successor_PEI_path,))
 
