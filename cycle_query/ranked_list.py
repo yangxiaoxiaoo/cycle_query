@@ -47,6 +47,12 @@ class ranked_list_abstract():
 	def size(self):
 		return self.curr_size
 
+	## Decreases the maximum allowed number of items by one
+	## Works only if initialized with a maximum size
+	def decrease_max_size(self):
+		if (self.max_size is not None):
+			self.max_size -= 1
+
 class ranked_list_pq(ranked_list_abstract):
 
 	def __init__(self, size = None):
@@ -67,14 +73,12 @@ class ranked_list_pq(ranked_list_abstract):
 	def pop_min(self, minWeight = None):
 		tup = heapq.heappop(self.l)
 		self.curr_size -= 1
-		if (self.max_size != None):
-			self.max_size -= 1
 		return tup
 
 	## Adds an item to the ranked list
 	## If the list is initialized as bounded, then the item is only stored if its weight is less than the maximum one stored
 	def add(self, item):
-		if (self.max_size == None or self.curr_size < self.max_size):
+		if (self.max_size is None or self.curr_size < self.max_size):
 			## Simply add in this case
 			heapq.heappush(self.l, item)
 			self.curr_size += 1
@@ -108,14 +112,12 @@ class ranked_list_btree(ranked_list_abstract):
 	def pop_min(self, minWeight = None):
 		tup = self.l.pop(0)
 		self.curr_size -= 1
-		if (self.max_size != None):
-			self.max_size -= 1
 		return tup
 
 	## Adds an item to the ranked list
 	## If the list is initialized as bounded, then the item is only stored if its weight is less than the maximum one stored
 	def add(self, item):
-		if (self.max_size == None or self.curr_size < self.max_size):
+		if (self.max_size is None or self.curr_size < self.max_size):
 			## Simply add in this case
 			self.l.add(item)
 			self.curr_size += 1
@@ -139,7 +141,7 @@ class ranked_list_treap(ranked_list_abstract):
 	## Returns an item of minimum weight without removing it
 	## If the minimum weight in the queue is known, it can be passed as an argument for better performance
 	def peek_min(self, minWeight = None):
-		if minWeight == None: 
+		if minWeight is None: 
 			key = self.l.find_min()
 		else: 
 			key = minWeight
@@ -150,7 +152,7 @@ class ranked_list_treap(ranked_list_abstract):
 	## Removes an item of minimum weight from the list and returns it
 	## If the minimum weight in the queue is known, it can be passed as an argument for better performance
 	def pop_min(self, minWeight = None):
-		if minWeight == None: 
+		if minWeight is None: 
 			key = self.l.find_min()
 		else: 
 			key = minWeight
@@ -159,14 +161,12 @@ class ranked_list_treap(ranked_list_abstract):
 		if listOfTuples == []:
 			self.l.remove(key)	
 		self.curr_size -= 1
-		if (self.max_size != None):
-			self.max_size -= 1
 		return tup
 
 	## Adds an item to the ranked list
 	## If the list is initialized as bounded, then the item is only stored if its weight is less than the maximum one stored
 	def add(self, item):
-		if (self.max_size == None or self.curr_size < self.max_size):
+		if (self.max_size is None or self.curr_size < self.max_size):
 			## Simply add in this case
 			if item[0] in self.l:
 				self.l[item[0]].append(item)

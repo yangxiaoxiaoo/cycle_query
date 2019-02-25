@@ -24,6 +24,8 @@ def move_to_out(joinResults, outBuffer, threshold, k):
 		if minWeight > threshold: 
 			break
 		outTuple = joinResults.pop_min(minWeight)
+		## Since outTuple is part of the top-k, we can decrease the maximum size of the data structure holding potential results
+		joinResults.decrease_max_size()
 		#print "Result " + str(outTuple) + " exceeds threshold and is moved to the output buffer"
 		outBuffer.append(outTuple)
 

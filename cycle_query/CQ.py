@@ -49,6 +49,7 @@ def priority_search_l_cycle_naive(K, rel2tuple, tuple2weight, tu2down_neis, l):
 
     while RL.size() != 0:
         (cur_PEI_cycle,) = RL.pop_min()
+        ## Decrease RL size???
         if cur_PEI_cycle.instance.completion:
             TOP_K.append(cur_PEI_cycle)
             if len(TOP_K) == K:
@@ -105,6 +106,8 @@ def priority_search_l_cycle_naive_next(tuple2weight, tu2down_neis, l, RL, tuple2
         (cur_PEI_cycle,) = RL.pop_min()
 
         if Deepak:
+            ## Decrease RL's maximum size (workds for any-k sort)
+            RL.decrease_max_size()
 
             successor_PEI_cycle = cur_PEI_cycle.successor(prev2sortedmap, tuple2weight, tuple2rem)
             if successor_PEI_cycle is not None:
@@ -229,6 +232,9 @@ def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, RL, bp2sorte
     while RL.size() != 0:
         (cur_PEI_cycle,) = RL.pop_min()
         if Deepak:
+            ## Decrease RL's maximum size (workds for any-k sort)
+            RL.decrease_max_size()
+
             #successor_PEI_cycle = cur_PEI_cycle.bigsucc(breakpoints2I2, I2_list2wgt, bp2sortedmap)
             #if successor_PEI_cycle != None:
             #    heapq.heappush(PQ, successor_PEI_cycle)
@@ -419,6 +425,8 @@ def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak):
         (cur_PEI_path,) = RL.pop_min()
 
         if Deepak:
+            ## Decrease RL's maximum size (workds for any-k sort)
+            RL.decrease_max_size()
 
             successor_PEI_path = cur_PEI_path.successor(prev2sortedmap, tuple2weight, tuple2rem)
 
