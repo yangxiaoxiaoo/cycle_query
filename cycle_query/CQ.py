@@ -7,7 +7,7 @@ import timeit
 import semi_join_utils
 
 def initialize_ranked_list():
-   return ranked_list.ranked_list_treap()
+   return ranked_list.ranked_list_pq()
 
 def path_SJ_reduce_l(rel2tuple, l):
     #path semi-join bottom-up, build dictionary to connected tuples.

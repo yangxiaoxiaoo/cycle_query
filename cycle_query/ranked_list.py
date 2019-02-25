@@ -78,7 +78,7 @@ class ranked_list_pq(ranked_list_abstract):
 			## Simply add in this case
 			heapq.heappush(self.l, item)
 			self.curr_size += 1
-		else:
+		elif (self.curr_size != 0):
 			## Add only if its weight is less than the maximum of the list, in which case it discards one of the max items
 			## Find index of max
 			idx = max(range(len(self.l)), key = self.l.__getitem__)
@@ -119,7 +119,7 @@ class ranked_list_btree(ranked_list_abstract):
 			## Simply add in this case
 			self.l.add(item)
 			self.curr_size += 1
-		else:
+		elif (self.curr_size != 0):
 			## Add only if its weight is less than the maximum of the list, in which case it discards one of the max items
 			maxWeight = self.l[-1][0]
 			if maxWeight > item[0]:
@@ -173,7 +173,7 @@ class ranked_list_treap(ranked_list_abstract):
 			else:
 				self.l[item[0]] = [item]
 			self.curr_size += 1
-		else:
+		elif (self.curr_size != 0):
 			## Add only if its weight is less than the maximum of the list, in which case it discards one of the max items
 			maxWeight = self.l.find_max()
 			## If the tuples with the max weight are worse than the new one, swap one of them with it
