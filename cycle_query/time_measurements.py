@@ -10,7 +10,7 @@ def measure_time_l_path(n, l, cycle_or_not):
     DensityOfEdges = "Full"
     edgeDistribution = "HardCase"
     rel2tuple, tuple2weight = DataGenerator.getDatabase \
-        (queryType, n, l, DensityOfEdges, edgeDistribution, 1)
+        (queryType, n, l, DensityOfEdges, edgeDistribution, 2)
 
 
     k = 9999999
@@ -22,7 +22,7 @@ def measure_time_l_path(n, l, cycle_or_not):
 
         print "algo: any-k priotitized search"
         t1 = timeit.default_timer()
-        TOP_K, time_for_each = CQ.priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak=True)
+        TOP_K, time_for_each = CQ.priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= True, RLmode = "PQ", bound = k)
         if len(time_for_each) > 0:
             time_for_each[0] += t_preprocess
         t2 = timeit.default_timer()
@@ -41,7 +41,7 @@ def measure_time_l_path(n, l, cycle_or_not):
 
         # TODO: add any-k naive?
         print "algo: any-k split version"
-        TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True)
+        TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, RLmode= "PQ", bound = k)
         if len(time_for_each) > 0:
             time_for_each[0] += t_preprocess
         t1 = timeit.default_timer()
