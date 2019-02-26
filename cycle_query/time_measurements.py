@@ -224,6 +224,10 @@ def measure_time_n(l):
         print int(n)
         measure_time_l_path(int(n), l, True)  # cyclic
         measure_time_l_path(int(n), l, False)  # acyclic
+    for n in n_log:
+        print int(n)
+        measure_time_l_path(int(n), l, True)  # cyclic
+        measure_time_l_path(int(n), l, False)  # acyclic
 
 def measure_time_l(n):
     for l in range(4, 10):
@@ -488,4 +492,4 @@ if __name__ == "__main__":
 
     l = 4
     measure_time_n(l)
-    plot(3, 0, l)
+    #plot(3, 0, l)
