@@ -412,10 +412,11 @@ def Deepak_sort_path(tuple2rem, tuple2weight, rel2tuple, l):
     return res
 
 
-def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak, RLmode, bound):
+def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak, RLmode, bound, debug):
 
     #Deepak = True: only push sorted successors.
-    assert l >= 4
+    if debug:
+        assert l >= 4
     # push PEIs into a priority queue, pop k heaviest full items
     # [DESIGN CHOICE] pop the lightest element as consistent with heapq native! If paper is about heaviest, can modify later.
     TOP_K = []
@@ -442,7 +443,7 @@ def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak, 
 
         if Deepak:
             ## Decrease RL's maximum size (workds for any-k sort)
-            RL.decrease_max_size()
+            ## RL.decrease_max_size()
 
             successor_PEI_path = cur_PEI_path.successor(prev2sortedmap, tuple2weight, tuple2rem)
 
@@ -456,8 +457,8 @@ def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak, 
                 if successor_PEI_path is not None:
                     assert cur_PEI_path < successor_PEI_path
                     RL.add((successor_PEI_path,))
-
-            assert  cur_PEI_path.instance.completion
+            if debug:
+                assert  cur_PEI_path.instance.completion
             TOP_K.append(cur_PEI_path)
 
             end_time = timeit.default_timer()
@@ -490,10 +491,11 @@ def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak, 
                         new_PEI_path = copy.deepcopy(cur_PEI_path)
                         new_PEI_path.merge(neighbor, tuple2weight, tuple2rem)
                         RL.add((new_PEI_path,))
-    print "TOP K results are"
-    for PEI_path in TOP_K:
-        print PEI_path.wgt
-    assert len(TOP_K) == K or RL.size() == 0
+    if debug:
+        print "TOP K results are"
+        for PEI_path in TOP_K:
+            print PEI_path.wgt
+        assert len(TOP_K) == K or RL.size() == 0
     return TOP_K, time_for_each
 
 def cycle_rotate(relation2tuple, pos, l):
@@ -560,12 +562,13 @@ def l_cycle_database_partition(relation2tuple, l):
 
     return partitions
 
-def path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis,k, l):
+def path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis,k, l, debug):
     # after the semi-join reduction, Yannakakis output simple join
     list2weight = simple_join(rel2tuple, tuple2weight, tu2down_neis, 0, l)
     sorted_weight = sorted(list2weight.values())
     for i in range(min(len(sorted_weight), k)):
-        print sorted_weight[i]
+        if debug:
+            print sorted_weight[i]
 
 def l_path_sim(l, k, RLmode, bound):
     # simple simulation on l_simple path. Tested and can be referred to in experiments.
@@ -581,7 +584,7 @@ def l_path_sim(l, k, RLmode, bound):
     print "algo: enumerate all"
     path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis, k, l)
 
-def cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l, recurse_or_not):
+def cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l, recurse_or_not, debug):
     # NPRR recursive join. May use Yannakakis as a subroutine
     results = []
     results2wgt = dict()
@@ -590,7 +593,8 @@ def cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l,
     else:
         l_part_2weight = simple_join(rel2tuple, tuple2weight, tu2down_neis, 1, l-2)
     for l_part in l_part_2weight:
-        if l!= 3:
+
+        if l!= 3 and debug:
             assert len(l_part) == l-3
         tu_start = l_part[0]
         tu_end = l_part[-1]
@@ -631,10 +635,10 @@ def cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l,
     
     PEIs = []
     for result in results:
-        print result
+        #print result
         assert len(result) == l-1
-        print  result[:l/2]
-        print result[l/2:] + [(result[-1][1], result[0][0])]
+        #print  result[:l/2]
+        #print result[l/2:] + [(result[-1][1], result[0][0])]
         PEI_instance = globalclass.PEI_lightcycle(result[0], 0, 0, l)
         PEI_instance.biginit(result[:l/2], 0, 0, l)
         PEI_instance.bigmerge(result[l/2:] + [(result[-1][1], result[0][0])], results2wgt[tuple(result)])
@@ -642,12 +646,14 @@ def cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l,
 
         values.append(results2wgt[tuple(result)])
     sorted_values = sorted(values)
-    for i in range(min(len(sorted_values), k)):
-        print sorted_values[i]
+    if debug:
+        for i in range(min(len(sorted_values), k)):
+            print sorted_values[i]
 
     sorted_PEIs = sorted(PEIs)
-    for i in range(min(len(sorted_values), k)):
-        print sorted_PEIs[i].wgt
+    if debug:
+        for i in range(min(len(sorted_values), k)):
+            print sorted_PEIs[i].wgt
 
 
     return results
@@ -729,7 +735,7 @@ def l_cycle_naive(l, k):
         assert TOP_K_PQ == TOP_K_PQ2
 
 
-def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmode, bound):
+def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmode, bound, debug):
     partitions = l_cycle_database_partition(rel2tuple, l)
     small_RL_list = []
     tuple2rem_list = []
@@ -750,7 +756,8 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmod
 
         if Deepak:
             prev2sortedmap, tuple2rem, RL = priority_search_l_cycle_naive_init(rotated_subdatabase, tuple2weight, tu2down_neis, l, Deepak, RLmode, bound)
-            assert type(prev2sortedmap) == dict
+            if debug:
+                assert type(prev2sortedmap) == dict
             prev2sortedmaps.append(prev2sortedmap)
         else:
             tuple2rem, RL = priority_search_l_cycle_naive_init(rotated_subdatabase, tuple2weight, tu2down_neis, l, Deepak, RLmode, bound)
@@ -769,11 +776,12 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmod
             head_values.append(99999999)  # mark that empty PQ as infinate large head value, since we look for lightest
         else:
             (top_PEI,) = RL.peek_min()  # peek at top result
-            assert isinstance(top_PEI, globalclass.PEI_cycle)
+            if debug:
+                assert isinstance(top_PEI, globalclass.PEI_cycle)
             cur_value = top_PEI.wgt + top_PEI.hrtc
             head_values.append(cur_value)
-
-    assert len(head_values) == l + 1
+    if debug:
+        assert len(head_values) == l + 1
     min_value = min(head_values)
     top_pos = head_values.index(min_value)
     #if top_pos == l:
@@ -879,9 +887,9 @@ def test_correctness():
 
 
 if __name__ == "__main__":
-    l_path_sim(4, 5, RLmode="Treap", bound=5)
+    l_path_sim(4, 5, RLmode="PQ", bound=5)
     #l_cycle_naive(5, 3)
-    l_cycle_split(4, 3, test=False, RLmode="Btree", bound=None)
+    l_cycle_split(4, 3, test=False, RLmode="PQ", bound=None)
 
     #test_correctness()
 
