@@ -1,14 +1,5 @@
 import os
 
-def findcycle(neighbors, seed):
-    seen = {seed}
-    Q = [seed]
-    while Q:
-
-
-
-
-
 
 def load(dir, dataset):
     relation2tuple = dict()

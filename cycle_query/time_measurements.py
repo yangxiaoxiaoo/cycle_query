@@ -1,6 +1,7 @@
 import timeit
 import pickle
 import semi_join_utils
+import numpy as np
 import CQ
 
 def measure_time_l_path(n, l, cycle_or_not):
@@ -217,9 +218,12 @@ def measure_time_grow_nl():
             measure_time_l_path(n, l, False)  # acyclic
 
 def measure_time_n(l):
-    for n in range(3, 100, 3):
-        measure_time_l_path(n, l, True)  # cyclic
-        measure_time_l_path(n, l, False)  # acyclic
+    n_log = np.logspace(1, 3, 10, endpoint=True)
+    n_line =  range(3, 50, 3)
+    for n in n_line:
+        print int(n)
+        measure_time_l_path(int(n), l, True)  # cyclic
+        measure_time_l_path(int(n), l, False)  # acyclic
 
 def measure_time_l(n):
     for l in range(4, 10):
@@ -406,43 +410,48 @@ def plot(mode, target, target_l):
         plt.ylabel('time (seconds)')
         plt.yscale('log')
         plt.xscale('log')
-        import numpy as np
+
         exp = 2
         if target_l == 4:
             exp = 1.5
 
+
         line_1, = plt.plot(n_values_cycle, n2_any_k_time_cycle, 'o', label='line 1')
+        line_1_, = plt.plot(n_values_cycle, n2_any_k_TTF_cycle, 'o', label='line 1_')
         line_2, = plt.plot(n_values_cycle, n2_full_time_cycle, 'o', label='Line 2')
         line_3, = plt.plot(n_values_cycle, n2_any_k_time_cycle_old, 'o', label='line 3')
-        line_4, = plt.plot(n_values_cycle, np.power(n_values_cycle, exp), label='line 4')
-        line_5, = plt.plot(n_values_cycle, np.power(n_values_cycle, 2), label='line 5')
-        plt.legend([line_1, line_2, line_3, line_4, line_5], ['any-k sort', 'full ranking', 'any-k max', 'n^'+ str(exp), 'n^2'])
+        line_3_, = plt.plot(n_values_cycle, n2_any_k_TTF_cycle_old, 'o', label='line 3_')
+        line_4, = plt.plot(n_values_cycle, np.true_divide(np.power(n_values_cycle, exp), 1000), label='line 4')
+        line_5, = plt.plot(n_values_cycle, np.true_divide(np.power(n_values_cycle, 2), 1000), label='line 5')
+        plt.legend([line_1, line_1_, line_2, line_3, line_3_, line_4, line_5],
+                   ['any-k sort TTL', 'any-k sort TTF', 'full ranking TTF/TTL', 'any-k max TTL', 'any-k max TTF', 'n^'+ str(exp) , 'n^2'])
         plt.title('Cycle TTL')
         plt.show()
         plt.xlabel('n')
         plt.ylabel('time (seconds)')
         plt.yscale('log')
         plt.xscale('log')
-        # line_1, = plt.plot(l_values_cycle, l2_any_k_average_time_cycle, 'o', label='line 1')
-        line_1, = plt.plot(n_values_cycle, n2_any_k_TTF_cycle, 'o', label='line 1')
-        line_2, = plt.plot(n_values_cycle, n2_full_time_cycle, 'o', label='Line 2')
-        line_3, = plt.plot(n_values_cycle, n2_any_k_TTF_cycle_old, 'o', label='line 3')
-        line_4, = plt.plot(n_values_cycle, np.power(n_values_cycle, exp), label='line 4')
-        line_5, = plt.plot(n_values_cycle, np.power(n_values_cycle, 2), label='line 5')
-        plt.legend([line_1, line_2, line_3, line_4, line_5],
-                   ['any-k sort', 'full ranking', 'any-k max', 'n^' + str(exp), 'n^2'])
-        plt.title('Cycle TTF')
-        plt.show()
-        plt.xlabel('n')
-        plt.ylabel('time (seconds)')
-        plt.yscale('log')
-        plt.xscale('log')
+
+        #line_1, = plt.plot(n_values_cycle, n2_any_k_TTF_cycle, 'o', label='line 1')
+        #line_2, = plt.plot(n_values_cycle, n2_full_time_cycle, 'o', label='Line 2')
+        #line_3, = plt.plot(n_values_cycle, n2_any_k_TTF_cycle_old, 'o', label='line 3')
+        #line_4, = plt.plot(n_values_cycle, np.power(n_values_cycle, exp), label='line 4')
+        #line_5, = plt.plot(n_values_cycle, np.power(n_values_cycle, 2), label='line 5')
+        #plt.legend([line_1, line_2, line_3, line_4, line_5],
+        #           ['any-k sort', 'full ranking', 'any-k max', 'n^' + str(exp), 'n^2'])
+        #plt.title('Cycle TTF')
+        #plt.show()
+        #plt.xlabel('n')
+        #plt.ylabel('time (seconds)')
+        #plt.yscale('log')
+        #plt.xscale('log')
+
         exp = 3  # 4-path...
         line_1, = plt.plot(n_values_path, n2_any_k_time_path, 'o', label='line 1')
         line_2, = plt.plot(n_values_path, n2_full_time_path, 'o', label='Line 2')
         line_3, = plt.plot(n_values_path, n2_any_k_time_path_old, 'o', label='line 3')
-        line_4, = plt.plot(n_values_cycle, np.power(n_values_cycle, exp), label='line 4')
-        line_5, = plt.plot(n_values_cycle, np.power(n_values_cycle, 1), label='line 5')
+        line_4, = plt.plot(n_values_path, np.power(n_values_path, exp), label='line 4')
+        line_5, = plt.plot(n_values_path, np.power(n_values_path, 1), label='line 5')
         plt.legend([line_1, line_2, line_3, line_4, line_5],
                    ['any-k sort', 'full ranking', 'any-k max', 'n^' + str(exp), 'n'])
         plt.title('Path TTL')
@@ -455,8 +464,8 @@ def plot(mode, target, target_l):
         line_1, = plt.plot(n_values_path, n2_any_k_TTF_path, 'o', label='line 1')
         line_2, = plt.plot(n_values_path, n2_full_time_path, 'o', label='Line 2')
         line_3, = plt.plot(n_values_path, n2_any_k_TTF_path_old, 'o', label='Line 3')
-        line_4, = plt.plot(n_values_cycle, np.power(n_values_cycle, exp), label='line 4')
-        line_5, = plt.plot(n_values_cycle, np.power(n_values_cycle, 1), label='line 5')
+        line_4, = plt.plot(n_values_path, np.power(n_values_path, exp), label='line 4')
+        line_5, = plt.plot(n_values_path, np.power(n_values_path, 1), label='line 5')
         plt.legend([line_1, line_2, line_3, line_4, line_5],
                    ['any-k sort', 'full ranking', 'any-k max', 'n^' + str(exp), 'n'])
         plt.title('Path TTF')
@@ -478,5 +487,5 @@ if __name__ == "__main__":
     #plot(2, n, 0) # l-scalability
 
     l = 4
-    #measure_time_n(l)
+    measure_time_n(l)
     plot(3, 0, l)
