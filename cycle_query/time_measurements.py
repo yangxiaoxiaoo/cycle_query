@@ -425,11 +425,19 @@ def plot(mode, target, target_l):
         line_2, = plt.plot(n_values_cycle, n2_full_time_cycle, 'o', label='Line 2')
         line_3, = plt.plot(n_values_cycle, n2_any_k_time_cycle_old, 'o', label='line 3')
         line_3_, = plt.plot(n_values_cycle, n2_any_k_TTF_cycle_old, 'o', label='line 3_')
-        line_4, = plt.plot(n_values_cycle, np.true_divide(np.power(n_values_cycle, exp), 1000), label='line 4')
-        line_5, = plt.plot(n_values_cycle, np.true_divide(np.power(n_values_cycle, 2), 1000), label='line 5')
+
+        compare1 = np.power(n_values_cycle, exp)
+        compare1 = np.true_divide(compare1, 5000)
+        compare1 = np.multiply(compare1, np.log(compare1))
+        compare2 = np.power(n_values_cycle, 2)
+        compare2 = np.true_divide(compare2, 5000)
+        compare2 = np.multiply(compare2, np.log(compare2))
+
+        line_4, = plt.plot(n_values_cycle, compare1 , label='line 4')
+        line_5, = plt.plot(n_values_cycle, compare2, label='line 5')
         plt.legend([line_1, line_1_, line_2, line_3, line_3_, line_4, line_5],
                    ['any-k sort TTL', 'any-k sort TTF', 'full ranking TTF/TTL', 'any-k max TTL', 'any-k max TTF', 'n^'+ str(exp) , 'n^2'])
-        plt.title('Cycle TTL')
+        plt.title('4-Cycle')
         plt.show()
         plt.xlabel('n')
         plt.ylabel('time (seconds)')
@@ -452,28 +460,31 @@ def plot(mode, target, target_l):
 
         exp = 3  # 4-path...
         line_1, = plt.plot(n_values_path, n2_any_k_time_path, 'o', label='line 1')
+        line_1_, = plt.plot(n_values_path, n2_any_k_TTF_path, 'o', label='line 1_')
         line_2, = plt.plot(n_values_path, n2_full_time_path, 'o', label='Line 2')
         line_3, = plt.plot(n_values_path, n2_any_k_time_path_old, 'o', label='line 3')
-        line_4, = plt.plot(n_values_path, np.power(n_values_path, exp), label='line 4')
-        line_5, = plt.plot(n_values_path, np.power(n_values_path, 1), label='line 5')
-        plt.legend([line_1, line_2, line_3, line_4, line_5],
-                   ['any-k sort', 'full ranking', 'any-k max', 'n^' + str(exp), 'n'])
-        plt.title('Path TTL')
+        line_3_, = plt.plot(n_values_path, n2_any_k_TTF_path_old, 'o', label='Line 3_')
+        line_4, = plt.plot(n_values_path, np.true_divide(np.power(n_values_path, exp), 5000), label='line 4')
+        line_5, = plt.plot(n_values_path, np.true_divide(np.power(n_values_path, 1), 5000), label='line 5')
+        plt.legend([line_1, line_1_, line_2, line_3, line_3_, line_4, line_5],
+                   ['any-k sort TTL', 'any-k sort TTF', 'full ranking TTF/TTL', 'any-k max TTL', 'any-k max TTF', 'n^' + str(exp), 'n'])
+        plt.title('4-Path')
         plt.show()
-        plt.xlabel('n')
-        plt.ylabel('time (seconds)')
-        plt.yscale('log')
-        plt.xscale('log')
-        # line_1, = plt.plot(l_values_path, l2_any_k_average_time_path, 'o', label='line 1')  ---not measure average TTN anymore
-        line_1, = plt.plot(n_values_path, n2_any_k_TTF_path, 'o', label='line 1')
-        line_2, = plt.plot(n_values_path, n2_full_time_path, 'o', label='Line 2')
-        line_3, = plt.plot(n_values_path, n2_any_k_TTF_path_old, 'o', label='Line 3')
-        line_4, = plt.plot(n_values_path, np.power(n_values_path, exp), label='line 4')
-        line_5, = plt.plot(n_values_path, np.power(n_values_path, 1), label='line 5')
-        plt.legend([line_1, line_2, line_3, line_4, line_5],
-                   ['any-k sort', 'full ranking', 'any-k max', 'n^' + str(exp), 'n'])
-        plt.title('Path TTF')
-        plt.show()
+
+        #plt.xlabel('n')
+        #plt.ylabel('time (seconds)')
+        #plt.yscale('log')
+        #plt.xscale('log')
+
+        #line_1, = plt.plot(n_values_path, n2_any_k_TTF_path, 'o', label='line 1')
+        #line_2, = plt.plot(n_values_path, n2_full_time_path, 'o', label='Line 2')
+        #line_3, = plt.plot(n_values_path, n2_any_k_TTF_path_old, 'o', label='Line 3')
+        #line_4, = plt.plot(n_values_path, np.power(n_values_path, exp), label='line 4')
+        #line_5, = plt.plot(n_values_path, np.power(n_values_path, 1), label='line 5')
+        #plt.legend([line_1, line_2, line_3, line_4, line_5],
+        #           ['any-k sort', 'full ranking', 'any-k max', 'n^' + str(exp), 'n'])
+        #plt.title('Path TTF')
+        #plt.show()
 
 
 if __name__ == "__main__":
@@ -491,5 +502,5 @@ if __name__ == "__main__":
     #plot(2, n, 0) # l-scalability
 
     l = 4
-    measure_time_n(l)
-    #plot(3, 0, l)
+    #measure_time_n(l)
+    plot(3, 0, l)
