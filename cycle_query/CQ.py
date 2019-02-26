@@ -577,12 +577,12 @@ def l_path_sim(l, k, RLmode, bound):
     rel2tuple, tuple2weight = semi_join_utils.build_relation(l, var2cand, weightrange=10)
     tu2down_neis, tu2up_neis = path_SJ_reduce_l(rel2tuple, l)
     print "algo: any-k priotitized search WWW"
-    TOP_K_PQ1, time_for_each = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, False, RLmode, bound)
+    TOP_K_PQ1, time_for_each = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, False, RLmode, bound, debug=True)
     print "algo: any-k priotitized search Deepak"
-    TOP_K_PQ2, time_for_each = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, True, RLmode, bound)
+    TOP_K_PQ2, time_for_each = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, True, RLmode, bound, debug=True)
     # assert TOP_K_PQ2 == TOP_K_PQ1 -- observed only rounding numerical errors, ignore.
     print "algo: enumerate all"
-    path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis, k, l)
+    path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis, k, l, debug=True)
 
 def cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l, recurse_or_not, debug):
     # NPRR recursive join. May use Yannakakis as a subroutine
@@ -775,7 +775,7 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmod
         if RL.size() == 0:
             head_values.append(99999999)  # mark that empty PQ as infinate large head value, since we look for lightest
         else:
-            (top_PEI,) = RL.peek_min()  # peek at top result
+            top_PEI = RL.min_weight()  # peek at top result
             if debug:
                 assert isinstance(top_PEI, globalclass.PEI_cycle)
             cur_value = top_PEI.wgt + top_PEI.hrtc
@@ -803,7 +803,7 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmod
             #    print next_result.instance.R_list
             #    print TOP_K[-1].instance.R_list
             #debug usage only
-            if isinstance(next_result, globalclass.PEI_cycle) and (len(TOP_K)== 0 or len(TOP_K)!= 0 and next_result.instance.R_list != TOP_K[-1].instance.R_list):  # when there is no next, maybe nontype.
+            if (len(TOP_K)== 0 or len(TOP_K)!= 0 and next_result.instance.R_list != TOP_K[-1].instance.R_list):  # when there is no next, maybe nontype.
                 TOP_K.append(next_result)
                 time_end = timeit.default_timer()
                 time_for_each.append(time_end - time_start)
@@ -813,7 +813,7 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmod
         else:  # all light partition
             print "come to the all light"
             next_result = priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, small_RL_list[l], bp2sortedmap, Deepak)
-            if isinstance(next_result, globalclass.PEI_lightcycle) and (len(TOP_K)== 0 or len(TOP_K)!= 0 and next_result.instance.R_list != TOP_K[-1].instance.R_list):  # when there is no next, maybe nontype.
+            if (len(TOP_K)== 0 or len(TOP_K)!= 0 and next_result.instance.R_list != TOP_K[-1].instance.R_list):  # when there is no next, maybe nontype.
                 TOP_K.append(next_result)
                 time_end = timeit.default_timer()
                 time_for_each.append(time_end - time_start)
@@ -823,7 +823,7 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmod
 
         # update the best value of this small PQ, if there is still some in there.
         if small_RL_list[top_pos].size() != 0:
-            (new_top_PEI,) = small_RL_list[top_pos].peek_min()
+            new_top_PEI = small_RL_list[top_pos].min_weight()   # peek
             cur_value = new_top_PEI.wgt + new_top_PEI.hrtc
             head_values[top_pos] = cur_value
         else:  # this PQ is done.
@@ -857,28 +857,33 @@ def l_cycle_split(l, k, test, RLmode, bound):
     if l == 4  and test:
         tu2down_neis4, tu2up_neis4 = semi_join_utils.full_SJ_reduce_4(rel2tuple)
         TOP_K_PQ2 = semi_join_utils.priority_search_4(k, rel2tuple, tuple2weight, tu2down_neis4)
-        cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis4, tu2down_neis4, k, l, True)
-        cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis4, tu2down_neis4, k, l, False)
+        cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis4, tu2down_neis4, k, l, True, debug=True)
+        cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis4, tu2down_neis4, k, l, False, debug=True)
 
     print "previous cycles"
-    TOP_K, time_for_each = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, False, RLmode, bound)
+    TOP_K_max, time_for_each_max = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, False, RLmode, bound, debug=True)
     print "TOP K results are"
-    for PEI in TOP_K:
+    for PEI in TOP_K_max:
         print PEI.wgt
 
     print "Deepak improved cycles"
-    TOP_K, time_for_each = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, True, RLmode, bound)
-
+    TOP_K_sort, time_for_each_sort = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, True, RLmode, bound, debug=True)
     print "TOP K results are"
-    for PEI in TOP_K:
+    for PEI in TOP_K_sort:
         print PEI.wgt
 
     if l == 4 and test:
-        if len(TOP_K) != len(TOP_K_PQ2):
+        if len(TOP_K_max) != len(TOP_K_PQ2):
             print "missed instances from PQs"
-        assert len(TOP_K) == len(TOP_K_PQ2)
+        assert len(TOP_K_max) == len(TOP_K_PQ2)
 
-    return TOP_K
+    ## Verify results
+    if len(TOP_K_max) != len(TOP_K_sort): print "== Error!!! Not the same length!"
+    for i in range(len(TOP_K_max)):
+        if not TOP_K_max[i].same_as(TOP_K_sort[i]):
+            print "== Error!!! Different results!"
+
+    return TOP_K_sort
 
 
 def test_correctness():

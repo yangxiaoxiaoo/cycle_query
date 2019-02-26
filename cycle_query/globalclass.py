@@ -99,6 +99,9 @@ class PEI_path():
         self.wgt += tuple2weight[head]
         self.hrtc = self.instance.max_wgt_rem(tuple2rem)
 
+    def same_as(self, other):
+        return self.instance.same_as(other.instance)
+
 
 
 
@@ -181,6 +184,8 @@ class PEI_cycle():
         self.hrtc = self.instance.max_wgt_rem(tuple2rem, self.breakpoint)
         return 0
 
+    def same_as(self, other):
+        return self.instance.same_as(other.instance)
 
 
 @functools.total_ordering
@@ -284,6 +289,8 @@ class path_instance():
         else:
             return tuple2rem[self.R_list[self.length-1]]
 
+    def same_as(self, other):
+        return self.R_list == other.R_list
 
 class cycle_instance():
 
@@ -338,6 +345,8 @@ class cycle_instance():
             self.length -= 1
             return front
 
+    def same_as(self, other):
+        return self.R_list == other.R_list
 
 
 class cycle4_instance():
