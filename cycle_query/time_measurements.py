@@ -235,7 +235,7 @@ def measure_time_n(l):
         #measure_time_l_path(int(n), l, False)  # acyclic
 
 def measure_time_l(n):
-    for l in range(4, 10):
+    for l in range(4, 12):
         measure_time_l_path(n, l, True)  # cyclic
         measure_time_l_path(n, l, False)  # acyclic
 
@@ -377,41 +377,46 @@ def plot(mode, target, target_l):
         plt.ylabel('time (seconds)')
         plt.yscale('log')
         line_1, = plt.plot(l_values_cycle, l2_any_k_time_cycle, 'o', label='line 1')
+        line_1_, = plt.plot(l_values_cycle, l2_any_k_TTF_cycle, 'o', label='line 1_')
         line_2, = plt.plot(l_values_cycle, l2_full_time_cycle, 'o', label='Line 2')
         line_3, = plt.plot(l_values_cycle, l2_any_k_time_cycle_old, 'o', label='line 3')
-        plt.legend([line_1, line_2, line_3], ['any-k sort', 'full ranking', 'any-k max'])
-        plt.title('Cycle TTL')
+        line_3_, = plt.plot(l_values_cycle, l2_any_k_TTF_cycle_old, 'o', label='line 3_')
+        plt.legend([line_1, line_1_, line_2, line_3, line_3_], ['any-k sort TTL', 'any-k sort TTF', 'full ranking TTF/TTL', 'any-k max TTL', 'any-k max TTF'])
+        plt.title('Cycle')
         plt.show()
-        plt.xlabel('l')
-        plt.ylabel('time (seconds)')
-        plt.yscale('log')
-        #line_1, = plt.plot(l_values_cycle, l2_any_k_average_time_cycle, 'o', label='line 1')
-        line_1, = plt.plot(l_values_cycle, l2_any_k_TTF_cycle, 'o', label='line 1')
-        line_2, = plt.plot(l_values_cycle, l2_full_time_cycle, 'o', label='Line 2')
-        line_3, = plt.plot(l_values_cycle, l2_any_k_TTF_cycle_old, 'o', label='line 3')
-        plt.legend([line_1, line_2, line_3], ['any-k sort', 'full ranking', 'any-k max'])
-        plt.title('Cycle TTF')
-        plt.show()
+        #plt.xlabel('l')
+       # plt.ylabel('time (seconds)')
+        #plt.yscale('log')
+        #line_1, = plt.plot(l_values_cycle, l2_any_k_TTF_cycle, 'o', label='line 1')
+        #line_2, = plt.plot(l_values_cycle, l2_full_time_cycle, 'o', label='Line 2')
+        #line_3, = plt.plot(l_values_cycle, l2_any_k_TTF_cycle_old, 'o', label='line 3')
+        #plt.legend([line_1, line_2, line_3], ['any-k sort', 'full ranking', 'any-k max'])
+        #plt.title('Cycle TTF')
+        #plt.show()
+
         plt.xlabel('l')
         plt.ylabel('time (seconds)')
         plt.yscale('log')
         line_1, = plt.plot(l_values_path, l2_any_k_time_path, 'o', label='line 1')
+        line_1_, = plt.plot(l_values_path, l2_any_k_TTF_path, 'o', label='line 1_')
+
         line_2, = plt.plot(l_values_path, l2_full_time_path, 'o', label='Line 2')
         line_3, = plt.plot(l_values_path, l2_any_k_time_path_old, 'o', label='line 3')
-        plt.legend([line_1, line_2, line_3], ['any-k sort', 'full ranking', 'any-k max'])
-        plt.title('Path TTL')
+        line_3_, = plt.plot(l_values_path, l2_any_k_TTF_path_old, 'o', label='line 3_')
+        plt.legend([line_1, line_1_, line_2, line_3, line_3_], ['any-k sort TTL', 'any-k sort TTF', 'full ranking', 'any-k max TTL', 'any-k max TTF'])
+        plt.title('Path')
         plt.show()
-        plt.xlabel('l')
-        plt.ylabel('time (seconds)')
-        plt.yscale('log')
-        #line_1, = plt.plot(l_values_path, l2_any_k_average_time_path, 'o', label='line 1')  ---not measure average TTN anymore
-        line_1, = plt.plot(l_values_path, l2_any_k_TTF_path, 'o', label='line 1')
-        line_2, = plt.plot(l_values_path, l2_full_time_path, 'o', label='Line 2')
-        line_3, = plt.plot(l_values_path, l2_any_k_TTF_path_old, 'o', label='line 3')
 
-        plt.legend([line_1, line_2, line_3], ['any-k sort', 'full ranking', 'any-k max'])
-        plt.title('Path TTF')
-        plt.show()
+        #plt.xlabel('l')
+        #plt.ylabel('time (seconds)')
+        #plt.yscale('log')
+        #line_1, = plt.plot(l_values_path, l2_any_k_TTF_path, 'o', label='line 1')
+        #line_2, = plt.plot(l_values_path, l2_full_time_path, 'o', label='Line 2')
+        #line_3, = plt.plot(l_values_path, l2_any_k_TTF_path_old, 'o', label='line 3')
+
+        #plt.legend([line_1, line_2, line_3], ['any-k sort', 'full ranking', 'any-k max'])
+        #plt.title('Path TTF')
+        #plt.show()
 
     if mode == 3:
         # plot how computation time for diffrent n on the same query (same l)
@@ -511,10 +516,10 @@ if __name__ == "__main__":
     #measure_time_n_v2(3, 50, 5, False) #5-path
     #plot(1, 0, 0) # any-k property.
 
-    #n = 10
-    #measure_time_l(n)
-    #plot(2, n, 0) # l-scalability
+    n = 5
+    measure_time_l(n)
+    plot(2, n, 0) # l-scalability
 
-    l = 4
+    #l = 4
     #measure_time_n(l)
-    plot(3, 0, l)
+    #plot(3, 0, l)
