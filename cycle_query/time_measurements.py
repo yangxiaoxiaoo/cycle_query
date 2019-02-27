@@ -533,7 +533,7 @@ if __name__ == "__main__":
     #plot(1, 0, 0) # any-k property.
 
     n = 5
-    #measure_time_l(n)
+    measure_time_l(n)
     plot(2, n, 0) # l-scalability
 
     #l = 4
