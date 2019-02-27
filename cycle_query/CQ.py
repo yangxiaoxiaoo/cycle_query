@@ -369,7 +369,7 @@ def Deepak_sort_cycle(tuple2rem, tuple2weight, rel2tuple, l):
 def heuristic_build_l_path(tuple2weight, rel2tuple, tu2down_neis, l):
     # build a dictionary from tuple down to the remaining weight not including tuple
     # assumption: no tuple appear in different relations
-    assert l >= 4
+    #assert l >= 4
     tuple2rem = dict()
 
     for tu in rel2tuple['R' + str(l-1)]:
