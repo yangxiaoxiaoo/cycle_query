@@ -208,8 +208,11 @@ class PEI_lightcycle(PEI_cycle):
 
 
     def bigmerge(self, I2_list, I2_wgt):
+        #print I2_list
         for tuple in I2_list:
             self.instance.insert_relation(tuple)
+
+
         self.wgt += I2_wgt
         self.hrtc = 0
         self.i2 = I2_list
@@ -311,6 +314,7 @@ class cycle_instance():
     def insert_relation(self, newtuple):
         # take tuple, insert into instance
         assert self.length <= self.goal_length
+        #print self.R_list
         assert self.completion == False
         if self.length == 0:
             self.R_list[0] = newtuple

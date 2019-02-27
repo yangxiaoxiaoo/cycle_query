@@ -268,6 +268,8 @@ def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, RL, bp2sorte
             #successor_PEI_cycle = cur_PEI_cycle.bigsucc(breakpoints2I2, I2_list2wgt, bp2sortedmap)
             #if successor_PEI_cycle != None:
             #    heapq.heappush(PQ, successor_PEI_cycle)
+            if cur_PEI_cycle.instance.completion:
+                return cur_PEI_cycle
             cur_PEI_cycle.bigexpand(breakpoints2I2, I2_list2wgt, bp2sortedmap)
             if not cur_PEI_cycle:
                 continue
@@ -614,42 +616,88 @@ def cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l,
         l_part_2weight = cycle_path_recursive(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, 1, l - 2)
     else:
         l_part_2weight = simple_join(rel2tuple, tuple2weight, tu2down_neis, 1, l-2)
-    for l_part in l_part_2weight:
 
-        if l!= 3 and debug:
-            assert len(l_part) == l-3
-        tu_start = l_part[0]
-        tu_end = l_part[-1]
-        if tu_start not in tu2up_neis or tu_end not in tu2down_neis:
-            # there is no cycles for this l_part.
-            continue
-        path_count = len(tu2up_neis[tu_start]) * len(tu2down_neis[tu_end])
-        close_relation = rel2tuple['R' + str(l-1)]
+    if l == 3:
+        close_relation = rel2tuple['R2']
+        x_r1count = dict()
+        x_r1 = dict()
+        x_r0count = dict()
+        x_r0 = dict()
+        for t in rel2tuple['R1']:
+            if t[0] not in x_r1count:
+                x_r1count[t[0]] = 1
+                x_r1[t[0]] = {t}
+            else:
+                x_r1count[t[0]] += 1
+                x_r1[t[0]].add(t)
+        for t in rel2tuple['R0']:
+            if t[1] not in x_r0count:
+                x_r0count[t[1]] = 1
+                x_r0[t[1]] = {t}
+            else:
+                x_r0count[t[1]] += 1
+                x_r0[t[1]].add(t)
 
-        path_list = []
-        if path_count < len(close_relation):
-            # materialize the paths
-            for up_nei in tu2up_neis[tu_start]:
-                for down_nei in tu2down_neis[tu_end]:
-                    path = [up_nei] + list(l_part) + [down_nei]
-                    path_list.append(path)
-                    if (path[-1][1], path[0][0]) in tuple2weight:
-                        results2wgt[tuple(path)] = tuple2weight[up_nei] + l_part_2weight[l_part] \
-                                               + tuple2weight[down_nei] + tuple2weight[(path[-1][1], path[0][0])]
-            for path in path_list:
-                if (path[-1][1], path[0][0]) in close_relation:
-                    results.append(path)
-        else:
-            # loop through each tuple tu_close in R(l-1)
-            # check if the tuple made of this R1[0] and tu_close[1] is in R0,
-            # and tuple made of  this R(l-2)[1] and tu_close[0] is in R(l-2)
-            for close_tu in rel2tuple['R' + str(l-1)]:
-                if (close_tu[1], l_part[0][0]) in rel2tuple['R0'] and \
-                        (l_part[-1][1], close_tu[0]) in rel2tuple['R'+str(l-2)]:
-                    path = [(close_tu[1], l_part[0][0])] + list(l_part) + [(l_part[-1][1], close_tu[0])]
-                    results2wgt[tuple(path)] = tuple2weight[(close_tu[1], l_part[0][0])] + l_part_2weight[l_part] \
-                                               + tuple2weight[(l_part[-1][1], close_tu[0])] + tuple2weight[close_tu]
-                    results.append(path)
+        for x in x_r0count:
+            if x in x_r1count:
+                path_count = x_r0count[x] * x_r1count[x]
+                path_list = []
+                if path_count < len(close_relation):
+                    for tr0 in x_r0[x]:
+                        for tr1 in x_r1[x]:
+                            path = [tr0, tr1]
+                            path_list.append(path)
+                            if (path[-1][1], path[0][0]) in tuple2weight:
+                                results2wgt[tuple(path)] = tuple2weight[tr0] + tuple2weight[tr1] + tuple2weight[(path[-1][1], path[0][0])]
+                    for path in path_list:
+                        if (path[-1][1], path[0][0]) in close_relation:
+                            results.append(path)
+                else:
+                    for close_tu in close_relation:
+                        if (close_tu[1], x) in rel2tuple['R0'] and (x, close_tu[0]) in rel2tuple['R1']:
+                            path = [(close_tu[1], x), (x, close_tu[0])]
+                            results2wgt[tuple(path)] = tuple2weight[path[0]] + tuple2weight[path[1]] + tuple2weight[
+                                close_tu]
+                            results.append(path)
+
+    else:
+
+        for l_part in l_part_2weight:
+
+            if l!= 3 and debug:
+                assert len(l_part) == l-3
+            tu_start = l_part[0]
+            tu_end = l_part[-1]
+            if tu_start not in tu2up_neis or tu_end not in tu2down_neis:
+                # there is no cycles for this l_part.
+                continue
+            path_count = len(tu2up_neis[tu_start]) * len(tu2down_neis[tu_end])
+            close_relation = rel2tuple['R' + str(l-1)]
+
+            path_list = []
+            if path_count < len(close_relation):
+                # materialize the paths
+                for up_nei in tu2up_neis[tu_start]:
+                    for down_nei in tu2down_neis[tu_end]:
+                        path = [up_nei] + list(l_part) + [down_nei]
+                        path_list.append(path)
+                        if (path[-1][1], path[0][0]) in tuple2weight:
+                            results2wgt[tuple(path)] = tuple2weight[up_nei] + l_part_2weight[l_part] \
+                                                   + tuple2weight[down_nei] + tuple2weight[(path[-1][1], path[0][0])]
+                for path in path_list:
+                    if (path[-1][1], path[0][0]) in close_relation:
+                        results.append(path)
+            else:
+                # loop through each tuple tu_close in R(l-1)
+                # check if the tuple made of this R1[0] and tu_close[1] is in R0,
+                # and tuple made of  this R(l-2)[1] and tu_close[0] is in R(l-2)
+                for close_tu in rel2tuple['R' + str(l-1)]:
+                    if (close_tu[1], l_part[0][0]) in rel2tuple['R0'] and \
+                            (l_part[-1][1], close_tu[0]) in rel2tuple['R'+str(l-2)]:
+                        path = [(close_tu[1], l_part[0][0])] + list(l_part) + [(l_part[-1][1], close_tu[0])]
+                        results2wgt[tuple(path)] = tuple2weight[(close_tu[1], l_part[0][0])] + l_part_2weight[l_part] \
+                                                   + tuple2weight[(l_part[-1][1], close_tu[0])] + tuple2weight[close_tu]
+                        results.append(path)
     values = []
 
 
@@ -667,8 +715,8 @@ def cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l,
         PEIs.append(PEI_instance)
 
         values.append(results2wgt[tuple(result)])
-    #sorted_values = sorted(values)
-    sorted_values = values
+    sorted_values = sorted(values)
+    #sorted_values = values
     if debug:
         for i in range(min(len(sorted_values), k)):
             print sorted_values[i]
@@ -758,7 +806,7 @@ def l_cycle_naive(l, k):
         assert TOP_K_PQ == TOP_K_PQ2
 
 
-def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmode, bound, debug, naive):
+def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmode, bound, debug):
     partitions = l_cycle_database_partition(rel2tuple, l)
     small_RL_list = []
     tuple2rem_list = []
@@ -770,39 +818,34 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmod
     prev2sortedmaps = []
 
     time_start = timeit.default_timer()
-    if naive != 2:
-        # 2: do not include heavy case.
-        for partition_index in range(l):
-            # with a heavy case: call naive
 
-            rotated_subdatabase = cycle_rotate(partitions[partition_index], partition_index, l)
+    for partition_index in range(l):
+        # with a heavy case: call naive
 
-            tu2down_neis, tu2up_neis = cycle_SJ_reduce_l(rotated_subdatabase, l)
-            tu2down_neis_list.append(tu2down_neis)
-            tu2up_neis_list.append(tu2up_neis)
+        rotated_subdatabase = cycle_rotate(partitions[partition_index], partition_index, l)
 
-            if Deepak:
-                prev2sortedmap, tuple2rem, RL = priority_search_l_cycle_naive_init(rotated_subdatabase, tuple2weight, tu2down_neis, l, Deepak, RLmode, bound)
-                if debug:
-                    assert type(prev2sortedmap) == dict
-                prev2sortedmaps.append(prev2sortedmap)
-            else:
-                tuple2rem, RL = priority_search_l_cycle_naive_init(rotated_subdatabase, tuple2weight, tu2down_neis, l, Deepak, RLmode, bound)
-            small_RL_list.append(RL)  # small_RL_list[i] is i-th partition's local PQ.
-            tuple2rem_list.append(tuple2rem)  # this is different for subdatabases, need to keep.
+        tu2down_neis, tu2up_neis = cycle_SJ_reduce_l(rotated_subdatabase, l)
+        tu2down_neis_list.append(tu2down_neis)
+        tu2up_neis_list.append(tu2up_neis)
+
+        if Deepak:
+            prev2sortedmap, tuple2rem, RL = priority_search_l_cycle_naive_init(rotated_subdatabase, tuple2weight, tu2down_neis, l, Deepak, RLmode, bound)
+            if debug:
+                assert type(prev2sortedmap) == dict
+            prev2sortedmaps.append(prev2sortedmap)
+        else:
+            tuple2rem, RL = priority_search_l_cycle_naive_init(rotated_subdatabase, tuple2weight, tu2down_neis, l, Deepak, RLmode, bound)
+        small_RL_list.append(RL)  # small_RL_list[i] is i-th partition's local PQ.
+        tuple2rem_list.append(tuple2rem)  # this is different for subdatabases, need to keep.
+
     # all light case
-    if naive==1:
-        # not evaluate the all light case
-        pass
-    else:
-        tu2down_neis, tu2up_neis = cycle_SJ_reduce_l(partitions[l], l)
-        bp2sortedmap, breakpoints2I2, I2_list2wgt, RL = priority_search_l_cycle_light_init(partitions[l], tuple2weight, tu2down_neis, l, Deepak, RLmode, bound)
-        small_RL_list.append(RL)
+    tu2down_neis, tu2up_neis = cycle_SJ_reduce_l(partitions[l], l)
+    bp2sortedmap, breakpoints2I2, I2_list2wgt, RL = priority_search_l_cycle_light_init(partitions[l], tuple2weight, tu2down_neis, l, Deepak, RLmode, bound)
+    small_RL_list.append(RL)
 
     # start global search
     head_values = []
-    if naive == 2:
-        assert len(small_RL_list) == 1
+
     for i in range(len(small_RL_list)):
         RL = small_RL_list[i]
         if RL.size() == 0:
@@ -826,7 +869,7 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmod
         if head_values[top_pos] == 99999999:  # another way to tell all empty..
             break
 
-        if top_pos != l and (naive != 2):  # regular partition
+        if top_pos != l :  # regular partition
             if Deepak:
                 prev2sortedmap = prev2sortedmaps[top_pos]
             next_result = priority_search_l_cycle_naive_next \
@@ -837,11 +880,8 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmod
             #debug usage only
 
         else:  # all light partition
-            if naive == 2:
-                pos = 0
-            else:
-                pos = l
-            next_result = priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, small_RL_list[pos], bp2sortedmap, Deepak)
+
+            next_result = priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, small_RL_list[l], bp2sortedmap, Deepak)
             if isinstance(next_result, globalclass.PEI_lightcycle) and (len(TOP_K)== 0 or len(TOP_K)!= 0 and next_result.instance.R_list != TOP_K[-1].instance.R_list):  # when there is no next, maybe nontype.
                 TOP_K.append(next_result)
                 time_end = timeit.default_timer()
@@ -963,11 +1003,11 @@ def run_cycle_example(n, l, k, RLmode, bound):
     rel2tuple, tuple2weight = DataGenerator.getDatabase("Cycle", n, l, "Full", "HardCase", 2)
     tu2down_neis, tu2up_neis = path_SJ_reduce_l(rel2tuple, l)
     print "Cycle algo: any-k sort"
-    TOP_K_sort, time_for_each_sort = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, RLmode= RLmode, bound = bound, debug = True, naive=0)
+    TOP_K_sort, time_for_each_sort = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, RLmode= RLmode, bound = bound, debug = True)
     for PEI in TOP_K_sort:
         print PEI.wgt
     print "Cycle algo: any-k max"
-    TOP_K_max, time_for_each_max = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=False, RLmode=RLmode, bound=bound, debug=True, naive=0)
+    TOP_K_max, time_for_each_max = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=False, RLmode=RLmode, bound=bound, debug=True)
     for PEI in TOP_K_max:
         print PEI.wgt
     print "Cycle algo: enumerate all"
@@ -982,18 +1022,20 @@ def run_cycle_example(n, l, k, RLmode, bound):
 
     if len(TOP_K_max) != min(k, len(sorted_values)):
         print "== Error (Cycle)!!! FE produces different amount of results!"
+
     for i in range(len(TOP_K_max)):
         if format(TOP_K_max[i].wgt, '.4f') != format(sorted_values[i], '.4f'):
             print "== Error (Cycle)!!! " + str(TOP_K_max[i].wgt) + " different than " + str(sorted_values[i])
 
 if __name__ == "__main__":
-    #l_path_sim(4, 5, RLmode="PQ", bound=5)
+    l_path_sim(4, 5, RLmode="PQ", bound=5)
     #l_cycle_naive(5, 3)
-    #l_cycle_split(4, 3, test=False, RLmode="PQ", bound=3)
+    #l_cycle_split(3, 5, test=False, RLmode="PQ", bound=3)
 
     #test_correctness()
-    run_path_example(n=50, l=5, k=5, RLmode="PQ", bound=None)
-    run_cycle_example(n=50, l=4, k=5, RLmode="PQ", bound=5)
+    #while(True):
+    #    run_path_example(n=50, l=5, k=5, RLmode="PQ", bound=None)
+    run_cycle_example(n=50, l=3, k=5, RLmode="PQ", bound=5)
 
 
 
