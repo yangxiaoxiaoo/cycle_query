@@ -667,7 +667,8 @@ def cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l,
         PEIs.append(PEI_instance)
 
         values.append(results2wgt[tuple(result)])
-    sorted_values = sorted(values)
+    #sorted_values = sorted(values)
+    sorted_values = values
     if debug:
         for i in range(min(len(sorted_values), k)):
             print sorted_values[i]

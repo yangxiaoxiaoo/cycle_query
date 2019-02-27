@@ -235,7 +235,7 @@ def measure_time_n(l):
         #measure_time_l_path(int(n), l, False)  # acyclic
 
 def measure_time_l(n):
-    for l in range(4, 35):
+    for l in range(3, 20):
         measure_time_l_path(n, l, True)  # cyclic
         measure_time_l_path(n, l, False)  # acyclic
 
@@ -381,7 +381,15 @@ def plot(mode, target, target_l):
         line_2, = plt.plot(l_values_cycle, l2_full_time_cycle, 'o', label='Line 2')
         line_3, = plt.plot(l_values_cycle, l2_any_k_time_cycle_old, 'o', label='line 3')
         line_3_, = plt.plot(l_values_cycle, l2_any_k_TTF_cycle_old, 'o', label='line 3_')
-        plt.legend([line_1, line_1_, line_2, line_3, line_3_], ['any-k sort TTL', 'any-k sort TTF', 'full ranking TTF/TTL', 'any-k max TTL', 'any-k max TTF'])
+
+        compare1 = np.power(2, l_values_cycle)
+        compare1 = np.true_divide(compare1, 50000)
+        compare2 = l_values_cycle
+        compare2 = np.true_divide(compare2, 50000)
+        line_4, = plt.plot(l_values_cycle, compare1, label='line 4')
+        line_5, = plt.plot(l_values_cycle, compare2, label='line 5')
+
+        plt.legend([line_1, line_1_, line_2, line_3, line_3_, line_4, line_5], ['any-k sort TTL', 'any-k sort TTF', 'full ranking TTF/TTL', 'any-k max TTL', 'any-k max TTF', 'n^(l/2)', "l"])
         plt.title('Cycle')
         plt.show()
         #plt.xlabel('l')
@@ -403,7 +411,15 @@ def plot(mode, target, target_l):
         line_2, = plt.plot(l_values_path, l2_full_time_path, 'o', label='Line 2')
         line_3, = plt.plot(l_values_path, l2_any_k_time_path_old, 'o', label='line 3')
         line_3_, = plt.plot(l_values_path, l2_any_k_TTF_path_old, 'o', label='line 3_')
-        plt.legend([line_1, line_1_, line_2, line_3, line_3_], ['any-k sort TTL', 'any-k sort TTF', 'full ranking', 'any-k max TTL', 'any-k max TTF'])
+
+        compare1 = np.power(2, l_values_cycle)
+        compare1 = np.true_divide(compare1, 50000)
+        compare2 = l_values_cycle
+        compare2 = np.true_divide(compare2, 50000)
+        line_4, = plt.plot(l_values_cycle, compare1, label='line 4')
+        line_5, = plt.plot(l_values_cycle, compare2, label='line 5')
+
+        plt.legend([line_1, line_1_, line_2, line_3, line_3_, line_4, line_5], ['any-k sort TTL', 'any-k sort TTF', 'full ranking', 'any-k max TTL', 'any-k max TTF', 'n^(l -1 )', "l"])
         plt.title('Path')
         plt.show()
 
@@ -517,7 +533,7 @@ if __name__ == "__main__":
     #plot(1, 0, 0) # any-k property.
 
     n = 5
-    measure_time_l(n)
+    #measure_time_l(n)
     plot(2, n, 0) # l-scalability
 
     #l = 4
