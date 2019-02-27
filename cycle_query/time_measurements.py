@@ -14,7 +14,7 @@ def measure_time_l_path(n, l, cycle_or_not):
         (queryType, n, l, DensityOfEdges, edgeDistribution, 2)
 
 
-    k = 9999999
+    k = 9999999999
     if not cycle_or_not:  # path case
         t_start = timeit.default_timer()
         tu2down_neis, tu2up_neis = CQ.path_SJ_reduce_l(rel2tuple, l)
@@ -23,7 +23,7 @@ def measure_time_l_path(n, l, cycle_or_not):
 
         print "algo: any-k priotitized search"
         t1 = timeit.default_timer()
-        TOP_K, time_for_each = CQ.priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= True, RLmode = "PQ", bound = k, debug = False)
+        TOP_K, time_for_each = CQ.priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= True, RLmode = "PQ", bound = None, debug = False)
         #modes: "PQ", "Btree", "Treap"
         #bound=None | k
         # when debug is True there is prints, otherwise not
@@ -31,7 +31,7 @@ def measure_time_l_path(n, l, cycle_or_not):
             time_for_each[0] += t_preprocess
 
         TOP_K, time_for_each_old = CQ.priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak=False,
-                                                             RLmode="PQ", bound=k, debug=False)
+                                                             RLmode="PQ", bound=None, debug=False)
         if len(time_for_each_old) > 0:
             time_for_each_old[0] += t_preprocess
 
@@ -52,16 +52,19 @@ def measure_time_l_path(n, l, cycle_or_not):
 
         # TODO: add any-k naive?
         print "algo: any-k split version"
-        TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, RLmode= "PQ", bound = k, debug = False)
+        TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, RLmode= "PQ", bound = k, debug = False, naive=1)
 
         if len(time_for_each) > 0:
+            time_for_each[0] = t_preprocess
             time_for_each[0] += t_preprocess
 
         TOP_K, time_for_each_old = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=False,
-                                                                  RLmode="PQ", bound=k, debug=False)
+                                                                  RLmode="PQ", bound=k, debug=False, naive=1)
 
         if len(time_for_each_old) > 0:
+            time_for_each_old[0] = t_preprocess
             time_for_each_old[0] += t_preprocess
+
 
         t1 = timeit.default_timer()
         print "algo: enumerate all"
@@ -71,7 +74,8 @@ def measure_time_l_path(n, l, cycle_or_not):
         print ('Time any-k split: ', t_preprocess + sum(time_for_each))
         t_full = t_preprocess + t3 - t1
         print ('Time enumerate: ', t_full)
-        print t_preprocess
+
+
 
     timetuple_full = (t_preprocess, t_full)
     if cycle_or_not:
@@ -151,7 +155,7 @@ def measure_time_n_v2(n_start, n_end, l, cycle_or_not):
         tu2down_neis, tu2up_neis = CQ.cycle_SJ_reduce_l(rel2tuple, l)
         t_end = timeit.default_timer()
         t_preprocess = t_end - t_start  # the time_any to preprocess and build the relation maps.
-        k = 9999999
+        k = 9999999999
         
         if not cycle_or_not:  # path case
             print "algo: any-k priotitized search"
@@ -194,7 +198,8 @@ def measure_time_n_v2(n_start, n_end, l, cycle_or_not):
             print ('Time any-k split: ', t_preprocess + sum(time_for_each))
             t_full = t_preprocess + t3 - t1
             print ('Time enumerate: ', t_full)
-            print t_preprocess
+
+
 
         timetuple_full = (t_preprocess, t_full)
         if cycle_or_not:
@@ -223,11 +228,11 @@ def measure_time_n(l):
     for n in n_line:
         print int(n)
         measure_time_l_path(int(n), l, True)  # cyclic
-        measure_time_l_path(int(n), l, False)  # acyclic
+        #measure_time_l_path(int(n), l, False)  # acyclic
     for n in n_log:
         print int(n)
         measure_time_l_path(int(n), l, True)  # cyclic
-        measure_time_l_path(int(n), l, False)  # acyclic
+        #measure_time_l_path(int(n), l, False)  # acyclic
 
 def measure_time_l(n):
     for l in range(4, 10):
@@ -427,16 +432,16 @@ def plot(mode, target, target_l):
         line_3_, = plt.plot(n_values_cycle, n2_any_k_TTF_cycle_old, 'o', label='line 3_')
 
         compare1 = np.power(n_values_cycle, exp)
-        compare1 = np.true_divide(compare1, 5000)
         compare1 = np.multiply(compare1, np.log(compare1))
+        compare1 = np.true_divide(compare1, 500000)
         compare2 = np.power(n_values_cycle, 2)
-        compare2 = np.true_divide(compare2, 5000)
-        compare2 = np.multiply(compare2, np.log(compare2))
 
+        compare2 = np.multiply(compare2, np.log(compare2))
+        compare2 = np.true_divide(compare2, 500000)
         line_4, = plt.plot(n_values_cycle, compare1 , label='line 4')
         line_5, = plt.plot(n_values_cycle, compare2, label='line 5')
         plt.legend([line_1, line_1_, line_2, line_3, line_3_, line_4, line_5],
-                   ['any-k sort TTL', 'any-k sort TTF', 'full ranking TTF/TTL', 'any-k max TTL', 'any-k max TTF', 'n^'+ str(exp) , 'n^2'])
+                   ['any-k sort TTL', 'any-k sort TTF', 'full ranking TTF/TTL', 'any-k max TTL', 'any-k max TTF', 'n^'+ str(exp)+' log n' , 'n^2 log n'])
         plt.title('4-Cycle')
         plt.show()
         plt.xlabel('n')
@@ -464,10 +469,19 @@ def plot(mode, target, target_l):
         line_2, = plt.plot(n_values_path, n2_full_time_path, 'o', label='Line 2')
         line_3, = plt.plot(n_values_path, n2_any_k_time_path_old, 'o', label='line 3')
         line_3_, = plt.plot(n_values_path, n2_any_k_TTF_path_old, 'o', label='Line 3_')
-        line_4, = plt.plot(n_values_path, np.true_divide(np.power(n_values_path, exp), 5000), label='line 4')
-        line_5, = plt.plot(n_values_path, np.true_divide(np.power(n_values_path, 1), 5000), label='line 5')
+
+        compare1 = np.power(n_values_cycle, exp)
+        compare1 = np.multiply(compare1, np.log(compare1))
+        compare1 = np.true_divide(compare1, 500000)
+        compare2 = np.power(n_values_cycle, 1)
+
+        compare2 = np.multiply(compare2, np.log(compare2))
+        compare2 = np.true_divide(compare2, 50000)
+        line_4, = plt.plot(n_values_cycle, compare1, label='line 4')
+        line_5, = plt.plot(n_values_cycle, compare2, label='line 5')
+
         plt.legend([line_1, line_1_, line_2, line_3, line_3_, line_4, line_5],
-                   ['any-k sort TTL', 'any-k sort TTF', 'full ranking TTF/TTL', 'any-k max TTL', 'any-k max TTF', 'n^' + str(exp), 'n'])
+                   ['any-k sort TTL', 'any-k sort TTF', 'full ranking TTF/TTL', 'any-k max TTL', 'any-k max TTF', 'n^' + str(exp) + ' log n', 'n log n'])
         plt.title('4-Path')
         plt.show()
 

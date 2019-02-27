@@ -39,15 +39,29 @@ def path_SJ_reduce_l(rel2tuple, l):
 def cycle_SJ_reduce_l(rel2tuple, l):
     #cycle SJ build dictionary to neighbors. Add closing one R(l-1) to R0
 
-    tu2down_neis, tu2up_neis = semi_join_utils.semi_join('R0', 'R1', rel2tuple)
-    for relation_index in range(1, l-1):
+    n = 0
+    for rel in rel2tuple:
+        n = max(n, len(rel2tuple[rel]))
+    delta = math.pow(n, 0.5)
+
+    tu2down_neis, tu2up_neis = semi_join_utils.semi_join('R' + str(l - 1), 'R0', rel2tuple)
+    if n > 20:
+        assert len(tu2down_neis) <= delta * n * 1.001
+
+    for relation_index in range(l-2, 0, -1):
         tu2down_neis1, tu2up_neis1 = semi_join_utils.semi_join('R'+str(relation_index), 'R'+str(relation_index + 1), rel2tuple)
+        if n > 20:
+            assert len(tu2down_neis1) <= delta * n * 1.001
         tu2up_neis.update(tu2up_neis1)
         tu2down_neis.update(tu2down_neis1)
-
-    tu2down_neis1, tu2up_neis1 = semi_join_utils.semi_join('R'+str(l-1), 'R0', rel2tuple)
+    tu2down_neis1, tu2up_neis1 = semi_join_utils.semi_join('R0', 'R1', rel2tuple)
+    if n > 20:
+        assert len(tu2down_neis1) <= delta * n * 1.001
     tu2up_neis.update(tu2up_neis1)
     tu2down_neis.update(tu2down_neis1)
+
+
+
 
     return tu2down_neis, tu2up_neis
 
@@ -519,6 +533,8 @@ def l_cycle_database_partition(relation2tuple, l):
     for key, value in relation2tuple.iteritems():
         N = max(N, len(value))
     delta = math.pow(N, 1/ (math.ceil(l/2)))
+    if l == 4:
+        assert delta * delta < N * 1.001 and delta * delta > N * 0.999
 
     heavy_tables = []
     light_tables = [] # list of l light table sets. use later to construct partitions.
@@ -528,6 +544,7 @@ def l_cycle_database_partition(relation2tuple, l):
         relation_name = 'R'+str(relation_index)
         current_relation_tuples = relation2tuple[relation_name]
         heavy_tuples = set()
+        heavy_values = set()
         light_tuples = set()
         degree_count = dict()
         for tu in current_relation_tuples:
@@ -536,11 +553,14 @@ def l_cycle_database_partition(relation2tuple, l):
             else:
                 degree_count[tu[0]] += 1
         for tu in current_relation_tuples:
-            if degree_count[tu[0]] < delta:
+            if degree_count[tu[0]] <= delta:
                 light_tuples.add(tu)
             else:
                 heavy_tuples.add(tu)
+                heavy_values.add(tu[0])
         # current partition is made of current relation light tuples, combined with remaining relation.
+        if delta > 5:
+            assert len(heavy_values) <= delta * 1.001
         heavy_tables.append(heavy_tuples)
         light_tables.append(light_tuples)
 
@@ -737,7 +757,7 @@ def l_cycle_naive(l, k):
         assert TOP_K_PQ == TOP_K_PQ2
 
 
-def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmode, bound, debug):
+def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmode, bound, debug, naive):
     partitions = l_cycle_database_partition(rel2tuple, l)
     small_RL_list = []
     tuple2rem_list = []
@@ -749,29 +769,39 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmod
     prev2sortedmaps = []
 
     time_start = timeit.default_timer()
-    for partition_index in range(l):
-        # with a heavy case: call naive
-        tu2down_neis, tu2up_neis = cycle_SJ_reduce_l(partitions[partition_index], l)
-        tu2down_neis_list.append(tu2down_neis)
-        tu2up_neis_list.append(tu2up_neis)
-        rotated_subdatabase = cycle_rotate(partitions[partition_index], partition_index, l)
+    if naive != 2:
+        # 2: do not include heavy case.
+        for partition_index in range(l):
+            # with a heavy case: call naive
 
-        if Deepak:
-            prev2sortedmap, tuple2rem, RL = priority_search_l_cycle_naive_init(rotated_subdatabase, tuple2weight, tu2down_neis, l, Deepak, RLmode, bound)
-            if debug:
-                assert type(prev2sortedmap) == dict
-            prev2sortedmaps.append(prev2sortedmap)
-        else:
-            tuple2rem, RL = priority_search_l_cycle_naive_init(rotated_subdatabase, tuple2weight, tu2down_neis, l, Deepak, RLmode, bound)
-        small_RL_list.append(RL)  # small_RL_list[i] is i-th partition's local PQ.
-        tuple2rem_list.append(tuple2rem)  # this is different for subdatabases, need to keep.
+            rotated_subdatabase = cycle_rotate(partitions[partition_index], partition_index, l)
+
+            tu2down_neis, tu2up_neis = cycle_SJ_reduce_l(rotated_subdatabase, l)
+            tu2down_neis_list.append(tu2down_neis)
+            tu2up_neis_list.append(tu2up_neis)
+
+            if Deepak:
+                prev2sortedmap, tuple2rem, RL = priority_search_l_cycle_naive_init(rotated_subdatabase, tuple2weight, tu2down_neis, l, Deepak, RLmode, bound)
+                if debug:
+                    assert type(prev2sortedmap) == dict
+                prev2sortedmaps.append(prev2sortedmap)
+            else:
+                tuple2rem, RL = priority_search_l_cycle_naive_init(rotated_subdatabase, tuple2weight, tu2down_neis, l, Deepak, RLmode, bound)
+            small_RL_list.append(RL)  # small_RL_list[i] is i-th partition's local PQ.
+            tuple2rem_list.append(tuple2rem)  # this is different for subdatabases, need to keep.
     # all light case
-    tu2down_neis, tu2up_neis = cycle_SJ_reduce_l(partitions[l], l)
-    bp2sortedmap, breakpoints2I2, I2_list2wgt, RL = priority_search_l_cycle_light_init(partitions[l], tuple2weight, tu2down_neis, l, Deepak, RLmode, bound)
-    small_RL_list.append(RL)
+    if naive==1:
+        # not evaluate the all light case
+        pass
+    else:
+        tu2down_neis, tu2up_neis = cycle_SJ_reduce_l(partitions[l], l)
+        bp2sortedmap, breakpoints2I2, I2_list2wgt, RL = priority_search_l_cycle_light_init(partitions[l], tuple2weight, tu2down_neis, l, Deepak, RLmode, bound)
+        small_RL_list.append(RL)
 
     # start global search
     head_values = []
+    if naive == 2:
+        assert len(small_RL_list) == 1
     for i in range(len(small_RL_list)):
         RL = small_RL_list[i]
         if RL.size() == 0:
@@ -794,7 +824,8 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmod
         # get the next result from there.
         if head_values[top_pos] == 99999999:  # another way to tell all empty..
             break
-        if top_pos != l:  # regular partition
+
+        if top_pos != l and (naive != 2):  # regular partition
             if Deepak:
                 prev2sortedmap = prev2sortedmaps[top_pos]
             next_result = priority_search_l_cycle_naive_next \
@@ -805,7 +836,11 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmod
             #debug usage only
 
         else:  # all light partition
-            next_result = priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, small_RL_list[l], bp2sortedmap, Deepak)
+            if naive == 2:
+                pos = 0
+            else:
+                pos = l
+            next_result = priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, small_RL_list[pos], bp2sortedmap, Deepak)
             if isinstance(next_result, globalclass.PEI_lightcycle) and (len(TOP_K)== 0 or len(TOP_K)!= 0 and next_result.instance.R_list != TOP_K[-1].instance.R_list):  # when there is no next, maybe nontype.
                 TOP_K.append(next_result)
                 time_end = timeit.default_timer()
@@ -927,11 +962,11 @@ def run_cycle_example(n, l, k, RLmode, bound):
     rel2tuple, tuple2weight = DataGenerator.getDatabase("Cycle", n, l, "Full", "HardCase", 2)
     tu2down_neis, tu2up_neis = path_SJ_reduce_l(rel2tuple, l)
     print "Cycle algo: any-k sort"
-    TOP_K_sort, time_for_each_sort = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, RLmode= RLmode, bound = bound, debug = True)
+    TOP_K_sort, time_for_each_sort = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, RLmode= RLmode, bound = bound, debug = True, naive=0)
     for PEI in TOP_K_sort:
         print PEI.wgt
     print "Cycle algo: any-k max"
-    TOP_K_max, time_for_each_max = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=False, RLmode=RLmode, bound=bound, debug=True)
+    TOP_K_max, time_for_each_max = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=False, RLmode=RLmode, bound=bound, debug=True, naive=0)
     for PEI in TOP_K_max:
         print PEI.wgt
     print "Cycle algo: enumerate all"
@@ -956,8 +991,8 @@ if __name__ == "__main__":
     #l_cycle_split(4, 3, test=False, RLmode="PQ", bound=3)
 
     #test_correctness()
-    run_path_example(n=50, l=5, k=999999999, RLmode="PQ", bound=None)
-    run_cycle_example(n=10, l=4, k=5, RLmode="PQ", bound=5)
+    run_path_example(n=50, l=5, k=5, RLmode="PQ", bound=None)
+    run_cycle_example(n=50, l=4, k=5, RLmode="PQ", bound=5)
 
 
 
