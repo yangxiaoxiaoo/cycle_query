@@ -235,7 +235,7 @@ def measure_time_n(l):
         #measure_time_l_path(int(n), l, False)  # acyclic
 
 def measure_time_l(n):
-    for l in range(4, 12):
+    for l in range(4, 20):
         measure_time_l_path(n, l, True)  # cyclic
         measure_time_l_path(n, l, False)  # acyclic
 
