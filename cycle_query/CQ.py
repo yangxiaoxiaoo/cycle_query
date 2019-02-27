@@ -567,8 +567,8 @@ def path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis,k, l, debug):
     # after the semi-join reduction, Yannakakis output simple join
     list2weight = simple_join(rel2tuple, tuple2weight, tu2down_neis, 0, l)
     sorted_weight = sorted(list2weight.values())
-    for i in range(min(len(sorted_weight), k)):
-        if debug:
+    if debug:
+        for i in range(min(len(sorted_weight), k)):
             print sorted_weight[i]
     return sorted_weight
 
@@ -914,7 +914,8 @@ def run_path_example(n, l, k, RLmode, bound):
         if not TOP_K_max[i].same_as(TOP_K_sort[i]):
             print "== Error (Path)!!! Different results!"
 
-    if len(TOP_K_max) != k:
+    print len(sorted_values)
+    if len(TOP_K_max) != min(k, len(sorted_values)):
         print "== Error (Path)!!! FE produces different amount of results!"
     for i in range(len(TOP_K_max)):
         if format(TOP_K_max[i].wgt, '.4f') != format(sorted_values[i], '.4f'):
@@ -943,7 +944,7 @@ def run_cycle_example(n, l, k, RLmode, bound):
         if not TOP_K_max[i].same_as(TOP_K_sort[i]):
             print "== Error (Cycle)!!! Sort and max different results!"
 
-    if len(TOP_K_max) != k:
+    if len(TOP_K_max) != min(k, len(sorted_values)):
         print "== Error (Cycle)!!! FE produces different amount of results!"
     for i in range(len(TOP_K_max)):
         if format(TOP_K_max[i].wgt, '.4f') != format(sorted_values[i], '.4f'):
@@ -955,7 +956,7 @@ if __name__ == "__main__":
     #l_cycle_split(4, 3, test=False, RLmode="PQ", bound=3)
 
     #test_correctness()
-    run_path_example(n=10, l=6, k=6, RLmode="PQ", bound=6)
+    run_path_example(n=50, l=5, k=999999999, RLmode="PQ", bound=None)
     run_cycle_example(n=10, l=4, k=5, RLmode="PQ", bound=5)
 
 
