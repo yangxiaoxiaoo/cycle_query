@@ -11,6 +11,7 @@ import sys
 from collections import defaultdict
 import operator
 import ranked_list
+import globalclass
 
 ## Inserts new join combinations to the sorted list
 def add_results(newResults, joinResults):
@@ -18,7 +19,8 @@ def add_results(newResults, joinResults):
 		joinResults.add(outTuple)
 
 ## If a result is below the threshold, then it is safe to output, so move it from the ranked list to the output buffer
-def move_to_out(joinResults, outBuffer, threshold, k):
+def move_to_out(joinResults, outBuffer, threshold, k, tuple2weight, l):
+
 	while joinResults.size() != 0 and len(outBuffer) < k:
 		minWeight = joinResults.min_weight()
 		if minWeight > threshold: 
@@ -27,6 +29,13 @@ def move_to_out(joinResults, outBuffer, threshold, k):
 		## Since outTuple is part of the top-k, we can decrease the maximum size of the data structure holding potential results
 		joinResults.decrease_max_size()
 		#print "Result " + str(outTuple) + " exceeds threshold and is moved to the output buffer"
+
+		## For a fair comparison, build PEI instances
+		t0 = (outTuple[1][0], outTuple[1][1])
+		PEI_instance = globalclass.PEI_path(t0, tuple2weight[t0], 0, l)
+		for i in range(1, l):
+			t_new = (outTuple[1][i], outTuple[1][i + 1])
+			PEI_instance.merge(t_new, tuple2weight, tuple2weight)
 		outBuffer.append(outTuple)
 
 ## Sorts the input relations in ascending order of weight
@@ -193,7 +202,7 @@ def hrjn_main(relation2tuple, tuple2weight, k, l, data_struct, bound, verify = F
 		## Ignore the threshold and output the results that have been computed
 		if i == -1: 
 			#print "\n==[All join combinations have been produced]=="
-			move_to_out(joinResults, outBuffer, float('inf'), k)   
+			move_to_out(joinResults, outBuffer, float('inf'), k, tuple2weight, l)   
 			break
 		r = relations[i]
 
@@ -225,7 +234,7 @@ def hrjn_main(relation2tuple, tuple2weight, k, l, data_struct, bound, verify = F
 		add_results(newResults, joinResults)
 
 		## Move join results to the output buffer and check for termination
-		move_to_out(joinResults, outBuffer, threshold, k)
+		move_to_out(joinResults, outBuffer, threshold, k, tuple2weight, l)
 		if len(outBuffer) == k:
 			break
 
@@ -302,7 +311,7 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Implementation of a generalized HRJN* operator for path queries')
 
 	parser.add_argument('-b', action="store_true", dest="bound", default=False, help="Bound the size of the data structure holding the results in ranked order")
-	parser.add_argument('-ds', action="store", dest="data_struct", choices={"pq", "btree", "treap"}, default="pq", help="Data structure to jold ranked results")
+	parser.add_argument('-ds', action="store", dest="data_struct", choices={"PQ", "Btree", "Treap"}, default="PQ", help="Data structure to jold ranked results")
 	parser.add_argument('-k', action="store", dest="k", default=1, type=int, help="Number of top results to produce")
 	parser.add_argument('-n', action="store", dest="n", default=5, type=int, help="Maximum cardinality of relations")
 	parser.add_argument('-l', action="store", dest="length", default=4, type=int, help="Length of Path or Cycle")
