@@ -57,12 +57,55 @@ def cycle_SJ_reduce_l(rel2tuple, l):
         n = max(n, len(rel2tuple[rel]))
     delta = math.pow(n, 0.5)
 
+    bp_set, rel2tuplebp = semi_join_utils.explode_bp(rel2tuple, l)
+
+    bp_tu2down_neis = dict()
+    bp_tu2up_neis = dict()
+    for bp in bp_set:
+
+        tu2down_neis, tu2up_neis = semi_join_utils.semi_join_bp('R' + str(l - 1), 'R0', rel2tuplebp, bp)
+        if n > 20:
+            assert len(tu2down_neis) <= delta * n * 1.001
+
+        for relation_index in range(l-2, 0, -1):
+            tu2down_neis1, tu2up_neis1 = semi_join_utils.semi_join('R'+str(relation_index), 'R'+str(relation_index + 1), rel2tuple)
+            if n > 20:
+                assert len(tu2down_neis1) <= delta * n * 1.001
+            tu2up_neis.update(tu2up_neis1)
+            tu2down_neis.update(tu2down_neis1)
+        tu2down_neis1, tu2up_neis1 = semi_join_utils.semi_join('R0', 'R1', rel2tuple)
+        if n > 20:
+            assert len(tu2down_neis1) <= delta * n * 1.001
+        tu2up_neis.update(tu2up_neis1)
+        tu2down_neis.update(tu2down_neis1)
+
+        bp_tu2down_neis[bp] = tu2down_neis
+        bp_tu2up_neis[bp] = tu2up_neis
+
+    return bp_set, bp_tu2down_neis, bp_tu2up_neis
+
+
+def cycle_SJ_reduce_l_light(rel2tuple, l):
+    # called by the all light case only.
+
+    n = 0
+    for rel in rel2tuple:
+        n = max(n, len(rel2tuple[rel]))
+    delta = math.pow(n, 0.5)
+
+    bp_set, rel2tuplebp = semi_join_utils.explode_bp(rel2tuple, l)
+
+    bp_tu2down_neis = dict()
+    bp_tu2up_neis = dict()
+
+
     tu2down_neis, tu2up_neis = semi_join_utils.semi_join('R' + str(l - 1), 'R0', rel2tuple)
     if n > 20:
         assert len(tu2down_neis) <= delta * n * 1.001
 
-    for relation_index in range(l-2, 0, -1):
-        tu2down_neis1, tu2up_neis1 = semi_join_utils.semi_join('R'+str(relation_index), 'R'+str(relation_index + 1), rel2tuple)
+    for relation_index in range(l - 2, 0, -1):
+        tu2down_neis1, tu2up_neis1 = semi_join_utils.semi_join('R' + str(relation_index),
+                                                               'R' + str(relation_index + 1), rel2tuple)
         if n > 20:
             assert len(tu2down_neis1) <= delta * n * 1.001
         tu2up_neis.update(tu2up_neis1)
@@ -72,9 +115,6 @@ def cycle_SJ_reduce_l(rel2tuple, l):
         assert len(tu2down_neis1) <= delta * n * 1.001
     tu2up_neis.update(tu2up_neis1)
     tu2down_neis.update(tu2down_neis1)
-
-
-
 
     return tu2down_neis, tu2up_neis
 
@@ -119,10 +159,10 @@ def priority_search_l_cycle_naive(K, rel2tuple, tuple2weight, tu2down_neis, l):
 '''
 
 
-def priority_search_l_cycle_naive_init(rel2tuple, tuple2weight, tu2down_neis, l, Deepak, RLmode, bound):
+def priority_search_l_cycle_naive_init(rel2tuple, tuple2weight, bp_set, bptu2down_neis, l, Deepak, RLmode, bound):
     #used by a global PQ_global.
     RL = initialize_ranked_list(RLmode, bound)
-    tuple2rem = heuristic_build_l_cycle(tuple2weight, rel2tuple, tu2down_neis, l)
+    tuple2rem = heuristic_build_l_cycle(tuple2weight, rel2tuple, bp_set,bptu2down_neis, l)
 
     if Deepak:
         prev2sortedmap = Deepak_sort_cycle(tuple2rem, tuple2weight, rel2tuple, l)
@@ -304,31 +344,33 @@ def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, RL, bp2sorte
     return t_end - t_start
 
 
-def heuristic_build_l_cycle(tuple2weight, rel2tuple, tu2down_neis, l):
+def heuristic_build_l_cycle(tuple2weight, rel2tuple, breakpoints, bptu2down_neis, l):
     # build a dictionary from tuple down to the remaining weight not including tuple
     # assumption: no tuple appear in different relations
 
     tuple2rem = dict()
-    breakpoints = set()
+    #breakpoints = set()
     for tu in rel2tuple['R'+ str(l-1)]:
-        breakpoints.add(tu[1])
+        #breakpoints.add(tu[1])
         tuple2rem[(tu, tu[1])] = 0
 
-    for tu in rel2tuple['R'+ str(l-2)]:
-        for tu_down in tu2down_neis[tu]:
-            if (tu_down, tu_down[1]) in tuple2rem:
-                new_val = tuple2weight[tu_down] + tuple2rem[tu_down, tu_down[1]]
-                if (tu, tu_down[1]) in tuple2rem:
-                    tuple2rem[(tu, tu_down[1])] = min(tuple2rem[(tu, tu_down[1])], new_val)
-                else:
-                    tuple2rem[(tu, tu_down[1])] = new_val
+    for bp in breakpoints:
 
-    for which_relation in range(l-3, -1, -1): # when l = 4, which_relation will be 1, 0
-        this_relation_name = 'R'+str(which_relation)
-        for tu in rel2tuple[this_relation_name]:
-            for tu_down in tu2down_neis[tu]:
-                new_val = tuple2weight[tu_down]
-                for bp in breakpoints:
+        for tu in rel2tuple['R'+ str(l-2)]:
+            for tu_down in bptu2down_neis[bp][tu]:
+                if tu_down[1] == bp and (tu_down, tu_down[1]) in tuple2rem:
+                    new_val = tuple2weight[tu_down] + tuple2rem[tu_down, tu_down[1]]
+                    if (tu, bp) in tuple2rem:
+                        tuple2rem[(tu, bp)] = min(tuple2rem[(tu, bp)], new_val)
+                    else:
+                        tuple2rem[(tu, bp)] = new_val
+
+        for which_relation in range(l-3, -1, -1): # when l = 4, which_relation will be 1, 0
+            this_relation_name = 'R'+str(which_relation)
+            for tu in rel2tuple[this_relation_name]:
+                for tu_down in bptu2down_neis[bp][tu]:
+                    new_val = tuple2weight[tu_down]
+
                     if (tu, bp) in tuple2rem:
                         if (tu_down, bp) in tuple2rem:
                             tuple2rem[(tu, bp)] = min(tuple2rem[(tu, bp)], tuple2rem[(tu_down, bp)] + new_val)
@@ -807,7 +849,7 @@ def cycle_path_recursive(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, s
         # only return those that are in the result, throw away dangling ones.
 
 
-
+'''
 def l_cycle_naive(l, k):
     attr_card = [4, 2, 2, 4, 5]
     var2cand = semi_join_utils.build_data(l, attr_card)
@@ -817,7 +859,7 @@ def l_cycle_naive(l, k):
     if l == 4:
         TOP_K_PQ2 = semi_join_utils.priority_search_4(k, min_relations, tuple2weight, tu2down_neis)
         assert TOP_K_PQ == TOP_K_PQ2
-
+'''
 
 def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmode, bound, debug):
     partitions = l_cycle_database_partition(rel2tuple, l)
@@ -837,22 +879,22 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmod
 
         rotated_subdatabase = cycle_rotate(partitions[partition_index], partition_index, l)
 
-        tu2down_neis, tu2up_neis = cycle_SJ_reduce_l(rotated_subdatabase, l)
-        tu2down_neis_list.append(tu2down_neis)
-        tu2up_neis_list.append(tu2up_neis)
+        bp_set, bptu2down_neis, bptu2up_neis = cycle_SJ_reduce_l(rotated_subdatabase, l)
+        tu2down_neis_list.append(bptu2down_neis)
+        tu2up_neis_list.append(bptu2up_neis)
 
         if Deepak:
-            prev2sortedmap, tuple2rem, RL = priority_search_l_cycle_naive_init(rotated_subdatabase, tuple2weight, tu2down_neis, l, Deepak, RLmode, bound)
+            prev2sortedmap, tuple2rem, RL = priority_search_l_cycle_naive_init(rotated_subdatabase, tuple2weight, bp_set, bptu2down_neis, l, Deepak, RLmode, bound)
             if debug:
                 assert type(prev2sortedmap) == dict
             prev2sortedmaps.append(prev2sortedmap)
         else:
-            tuple2rem, RL = priority_search_l_cycle_naive_init(rotated_subdatabase, tuple2weight, tu2down_neis, l, Deepak, RLmode, bound)
+            tuple2rem, RL = priority_search_l_cycle_naive_init(rotated_subdatabase, tuple2weight, bp_set, bptu2down_neis, l, Deepak, RLmode, bound)
         small_RL_list.append(RL)  # small_RL_list[i] is i-th partition's local PQ.
         tuple2rem_list.append(tuple2rem)  # this is different for subdatabases, need to keep.
 
     # all light case
-    tu2down_neis, tu2up_neis = cycle_SJ_reduce_l(partitions[l], l)
+    tu2down_neis, tu2up_neis = cycle_SJ_reduce_l_light(partitions[l], l)
     bp2sortedmap, breakpoints2I2, I2_list2wgt, RL = priority_search_l_cycle_light_init(partitions[l], tuple2weight, tu2down_neis, l, Deepak, RLmode, bound)
     small_RL_list.append(RL)
 
@@ -1047,8 +1089,8 @@ if __name__ == "__main__":
 
     #test_correctness()
     #while(True):
-    run_path_example(n=50, l=5, k=5, RLmode="PQ", bound=None)
-    #run_cycle_example(n=50, l=3, k=5, RLmode="PQ", bound=5)
+    #run_path_example(n=50, l=5, k=5, RLmode="PQ", bound=None)
+    run_cycle_example(n=50, l=3, k=5, RLmode="PQ", bound=5)
 
 
 

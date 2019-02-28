@@ -6,8 +6,25 @@ import timeit
 import semi_join_utils
 import sys
 
-#def l_cycle_split_bool(rel2tuple, tuple2weight, k, l, Deepak, RLmode, bound, debug):
+'''
+def l_cycle_split_bool(rel2tuple, tuple2weight, k, l, Deepak, RLmode, bound, debug):
     # split the cycle, run boolean on each, if there is any result in each, return True
+    time_start = timeit.default_timer()
+    res = False
+    partitions = CQ.l_cycle_database_partition(rel2tuple, l)
+    for partition_index in range(l):
+        # with a heavy case: call naive
+
+        rotated_subdatabase = CQ.cycle_rotate(partitions[partition_index], partition_index, l)
+        for rel in rotated_subdatabase:
+            ..
+
+        cycle_SJ_reduce_l(rotated_subdatabase, l)?
+        cur_bool = l_path_bool(rotated_subdatabase, l)
+        res = cur_bool or res
+        # if one subdatabase is True, then total True
+        
+    '''
 
 #def l_cycle_split_top1(rel2tuple, tuple2weight, k, l, Deepak, RLmode, bound, debug):
     # split the cycle, find the top 1 of each, then find the top 1 of all l + 1 partitions.

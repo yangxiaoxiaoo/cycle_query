@@ -61,6 +61,72 @@ def build_relation(cyc_len, var2cand, weightrange):
                 # print key + ": adding tuple" + str([tuple0, tuple1])
     return rel2tuple, tuple2weight
 
+def explode_bp(rel2tuple, l):
+
+    bp_set = set()
+    temp_set = set()
+    for t1 in rel2tuple['R0']:
+        temp_set.add(t1[0])
+    for tl in rel2tuple['R'+str(l-1)]:
+        if tl[1] in temp_set:
+            bp_set.add(tl[1])
+
+    rel2tuplebp = dict()
+    for bp in bp_set:
+        rel2tuplebp[bp] = dict()
+        for k in rel2tuple:
+            rel2tuplebp[bp][k] = set()
+        for tuple in rel2tuple['R0']:
+            if tuple[0] == bp:
+                rel2tuplebp[bp]['R0'].add(tuple)
+        for i in range(1, l-1):
+            r = 'R'+ str(i)
+            assert type(rel2tuple[r]) == set
+            rel2tuplebp[bp][r] = rel2tuple[r]
+        r = 'R' + str(l-1)
+        for tuple in rel2tuple[r]:
+            if tuple[1] == bp:
+                rel2tuplebp[bp][r].add(tuple)
+    return bp_set, rel2tuplebp
+
+
+def semi_join_bp(R_start, R_end, rel2tuplebp, bp):
+    # rel2tuplebp is mapping a bp to rel2tuple
+    rel2tuple = rel2tuplebp[bp]
+    tu2down_neis = dict()
+    tu2up_neis = dict()
+
+
+    get_first_ele = lambda (x0, x1): x0
+    checkset = set((get_first_ele(tup) for tup in rel2tuple[R_end]))
+    new_set = set()
+    for tup in rel2tuple[R_start]:
+        tu2down_neis[tup] = set()
+        if tup[1] in checkset:
+            new_set.add(tup)
+            for tup_down in rel2tuple[R_end]:
+                if tup_down[0] == tup[1]:
+                    # [DESIGN CHOICE]when there are many spurious tuples, this is more efficient than loop earlier
+                    tu2down_neis[tup].add(tup_down)
+                    if tup_down in tu2up_neis:
+                        tu2up_neis[tup_down].add(tup)
+                    else:
+                        tu2up_neis[tup_down] = {tup}
+    rel2tuple[R_start] = new_set
+    rel2tuplebp[bp] = rel2tuple
+    return tu2down_neis, tu2up_neis
+
+def semi_join_reverse_bp(R_start, R_end, rel2tuplebp, bp):
+    rel2tuple = rel2tuplebp[bp]
+    get_second_ele = lambda (x0, x1): x1
+    checkset = set((get_second_ele(tup) for tup in rel2tuple[R_start]))
+    new_set = set()
+    for tup in rel2tuple[R_end]:
+        if tup[0] in checkset:
+            new_set.add(tup)
+    rel2tuple[R_end] = new_set
+    rel2tuplebp = rel2tuple
+
 
 def semi_join(R_start, R_end, rel2tuple):
     tu2down_neis = dict()
