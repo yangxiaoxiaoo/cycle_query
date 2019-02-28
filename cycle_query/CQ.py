@@ -23,11 +23,24 @@ def initialize_ranked_list(RLmode, bound):
             print "RL data structure not supported!"
             sys.exit(1)        
 
-def path_SJ_reduce_l(rel2tuple, l):
+def path_SJ_reduce_l_old(rel2tuple, l):
     #path semi-join bottom-up, build dictionary to connected tuples.
 
     tu2down_neis, tu2up_neis = semi_join_utils.semi_join('R0', 'R1', rel2tuple)
     for relation_index in range(1, l-1):
+        tu2down_neis1, tu2up_neis1 = semi_join_utils.semi_join('R'+str(relation_index), 'R'+str(relation_index + 1), rel2tuple)
+        tu2up_neis.update(tu2up_neis1)
+        tu2down_neis.update(tu2down_neis1)
+
+
+    return tu2down_neis, tu2up_neis
+
+
+def path_SJ_reduce_l(rel2tuple, l):
+    #path semi-join bottom-up, build dictionary to connected tuples.
+
+    tu2down_neis, tu2up_neis = semi_join_utils.semi_join('R' + str(l-2), 'R' + str(l-1), rel2tuple)
+    for relation_index in range(l-3, -1, -1):
         tu2down_neis1, tu2up_neis1 = semi_join_utils.semi_join('R'+str(relation_index), 'R'+str(relation_index + 1), rel2tuple)
         tu2up_neis.update(tu2up_neis1)
         tu2down_neis.update(tu2down_neis1)
@@ -1034,8 +1047,8 @@ if __name__ == "__main__":
 
     #test_correctness()
     #while(True):
-    #    run_path_example(n=50, l=5, k=5, RLmode="PQ", bound=None)
-    run_cycle_example(n=50, l=3, k=5, RLmode="PQ", bound=5)
+    run_path_example(n=50, l=5, k=5, RLmode="PQ", bound=None)
+    #run_cycle_example(n=50, l=3, k=5, RLmode="PQ", bound=5)
 
 
 

@@ -532,10 +532,14 @@ if __name__ == "__main__":
     #measure_time_n_v2(3, 50, 5, False) #5-path
     #plot(1, 0, 0) # any-k property.
 
-    n = 5
-    measure_time_l(n)
-    plot(2, n, 0) # l-scalability
+    #n = 5
+    #measure_time_l(n)
+    #plot(2, n, 0) # l-scalability
 
-    #l = 4
-    #measure_time_n(l)
-    #plot(3, 0, l)
+    l = 4
+    measure_time_n(l)
+    #plot(3, 0, l)  # n-scalability
+
+
+
+
