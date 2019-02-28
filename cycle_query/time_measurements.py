@@ -52,14 +52,14 @@ def measure_time_l_path(n, l, cycle_or_not):
 
         # TODO: add any-k naive?
         print "algo: any-k split version"
-        TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, RLmode= "PQ", bound = k, debug = False, naive=1)
+        TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, RLmode= "PQ", bound = k, debug = False)
 
         if len(time_for_each) > 0:
             time_for_each[0] = t_preprocess
             time_for_each[0] += t_preprocess
 
         TOP_K, time_for_each_old = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=False,
-                                                                  RLmode="PQ", bound=k, debug=False, naive=1)
+                                                                  RLmode="PQ", bound=k, debug=False)
 
         if len(time_for_each_old) > 0:
             time_for_each_old[0] = t_preprocess
