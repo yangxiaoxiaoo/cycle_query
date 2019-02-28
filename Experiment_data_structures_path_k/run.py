@@ -20,7 +20,7 @@ def sanitize_times(time_for_each, t_preprocess):
     return res
 
 ## Fixed
-n = 20
+n = 50
 l = 5
 
 rel2tuple, tuple2weight = DataGenerator.getDatabase("Path", n, l, "Full", "HardCase", 2)
@@ -89,7 +89,7 @@ for ds in data_structure_list:
     f.close()
     print "Done with anyk_max_" + ds + "_bounded"
 
-## Run anyk-max bounded
+## Run anyk-sort bounded
 data_structure_list = ["Btree", "Treap"]
 for ds in data_structure_list:
     times = []
@@ -110,7 +110,7 @@ for ds in data_structure_list:
     times = []
     for k in k_list:
         t1 = timeit.default_timer()
-        res = HRJNstar.hrjn_main(rel2tuple, tuple2weight, k, l, ds, False)
+        res = HRJNstar.hrjn_main(rel2tuple, tuple2weight, k, l, ds, bound = False)
         t2 = timeit.default_timer()
         times.append(t2 - t1 + t_preprocess)
     f = open("outs/HRJN_" + ds + "_unbounded", "w")
@@ -123,7 +123,7 @@ for ds in data_structure_list:
     times = []
     for k in k_list:
         t1 = timeit.default_timer()
-        res = HRJNstar.hrjn_main(rel2tuple, tuple2weight, k, l, ds, True)
+        res = HRJNstar.hrjn_main(rel2tuple, tuple2weight, k, l, ds, bound = True)
         t2 = timeit.default_timer()
         times.append(t2 - t1 + t_preprocess)
     f = open("outs/HRJN_" + ds + "_bounded", "w")
