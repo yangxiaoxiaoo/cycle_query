@@ -49,7 +49,7 @@ print "Done with batch ranking"
 ## Run anyk-max unbounded
 data_structure_list = ["PQ", "Btree"]
 for ds in data_structure_list:
-    TOP_K, time_for_each = CQ.priority_search_l_path(9999999, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= False, RLmode = ds, bound = None, debug = False)
+    TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k_limit, l, Deepak=False, RLmode= "PQ", bound = None, debug = False)
     times = sanitize_times(time_for_each, t_preprocess)
     f = open("outs/anyk_max_" + ds + "_unbounded", "w")
     for i in range(len(times)):
@@ -60,7 +60,7 @@ for ds in data_structure_list:
 ## Run anyk-sort unbounded
 data_structure_list = ["PQ", "Btree"]
 for ds in data_structure_list:
-    TOP_K, time_for_each = CQ.priority_search_l_path(9999999, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= True, RLmode = ds, bound = None, debug = False)
+    TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k_limit, l, Deepak=True, RLmode= "PQ", bound = None, debug = False)
     times = sanitize_times(time_for_each, t_preprocess)
     f = open("outs/anyk_sort_" + ds + "_unbounded", "w")
     for i in range(len(times)):

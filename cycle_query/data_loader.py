@@ -53,7 +53,7 @@ def load(dir, dataset):
 
 	elif dataset == "Twitter" or dataset == "Twitter_truncated":
 
-		max_id = 1000
+		max_id = 500
 		length = 4
 		weightrange = 100.0
 		list_of_tuples = []
