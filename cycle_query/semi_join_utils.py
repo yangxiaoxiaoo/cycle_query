@@ -126,6 +126,7 @@ def semi_join_reverse_bp(R_start, R_end, rel2tuplebp, bp):
             new_set.add(tup)
     rel2tuple[R_end] = new_set
     rel2tuplebp = rel2tuple
+    return rel2tuplebp
 
 
 def semi_join(R_start, R_end, rel2tuple):
