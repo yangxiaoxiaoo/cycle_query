@@ -3,6 +3,7 @@ import pickle
 import semi_join_utils
 import numpy as np
 import CQ
+import BooleanTop1
 
 def measure_time_l_path(n, l, cycle_or_not):
     # simplest version, takes n and l. Useful version!
@@ -40,26 +41,31 @@ def measure_time_l_path(n, l, cycle_or_not):
         print "algo: enumerate all"
         CQ.path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis, k, l, debug = False)
         t3 = timeit.default_timer()
+
+        exist, t_bool = BooleanTop1.l_path_bool(rel2tuple,l)
+        Top1, t_top1 = BooleanTop1.l_path_top1(rel2tuple, tuple2weight, tu2down_neis, l)
+        t_top1 += t_preprocess
+
         print ('Time any-k: ', t_preprocess + sum(time_for_each))
         t_full  =  t_preprocess + t3 - t2
         print ('Time enumerate: ', t_full)
 
     else:  # cycle
         t_start = timeit.default_timer()
-        tu2down_neis, tu2up_neis = CQ.cycle_SJ_reduce_l(rel2tuple, l)
+        tu2down_neis, tu2up_neis = CQ.cycle_SJ_reduce_l_light(rel2tuple, l)
         t_end = timeit.default_timer()
         t_preprocess = t_end - t_start  # the time_any to preprocess and build the relation maps.
 
         # TODO: add any-k naive?
         print "algo: any-k split version"
-        TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, RLmode= "PQ", bound = k, debug = False)
+        TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, RLmode= "PQ", bound = None, debug = False)
 
         if len(time_for_each) > 0:
             time_for_each[0] = t_preprocess
             time_for_each[0] += t_preprocess
 
         TOP_K, time_for_each_old = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=False,
-                                                                  RLmode="PQ", bound=k, debug=False)
+                                                                  RLmode="PQ", bound=None, debug=False)
 
         if len(time_for_each_old) > 0:
             time_for_each_old[0] = t_preprocess
@@ -71,6 +77,9 @@ def measure_time_l_path(n, l, cycle_or_not):
         CQ.cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l, False, debug= False)
         t3 = timeit.default_timer()
 
+        exist, t_bool = BooleanTop1.l_cycle_split_bool(rel2tuple, tuple2weight, l)
+        Top1, t_top1 = BooleanTop1.l_cycle_split_top1(rel2tuple, tuple2weight, l)
+
         print ('Time any-k split: ', t_preprocess + sum(time_for_each))
         t_full = t_preprocess + t3 - t1
         print ('Time enumerate: ', t_full)
@@ -78,14 +87,18 @@ def measure_time_l_path(n, l, cycle_or_not):
 
 
     timetuple_full = (t_preprocess, t_full)
+    timetuple_bool = (t_bool, t_top1)
     if cycle_or_not:
         pickle.dump(time_for_each, open("../time_any/" + str(n)+'_'+str(l) + '_cycle', 'wb'))
         pickle.dump(time_for_each_old, open("../time_old/" + str(n) + '_' + str(l) + '_cycle', 'wb'))
         pickle.dump(timetuple_full, open("../time_all/" + str(n) + '_' + str(l) + '_cycle', 'wb'))
+        pickle.dump(timetuple_bool, open("../time_bool/" + str(n) + '_' + str(l) + '_cycle', 'wb'))
+
     else:
         pickle.dump(time_for_each, open("../time_any/" + str(n) + '_' + str(l) + '_path', 'wb'))
         pickle.dump(time_for_each_old, open("../time_old/" + str(n) + '_' + str(l) + '_path', 'wb'))
         pickle.dump(timetuple_full, open("../time_all/" + str(n) + '_' + str(l) + '_path', 'wb'))
+        pickle.dump(timetuple_bool, open("../time_bool/" + str(n) + '_' + str(l) + '_path', 'wb'))
 
 '''
 def measure_time_l_v2(n, l_start, l_end, cycle_or_not):
@@ -175,7 +188,7 @@ def measure_time_n_v2(n_start, n_end, l, cycle_or_not):
 
             t1 = timeit.default_timer()
             print "algo: enumerate all"
-            CQ.path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis, k, l)
+            CQ.path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis, k, l, False)
             t3 = timeit.default_timer()
             print ('Time any-k: ', t_preprocess + sum(time_for_each))
             t_full  =  t_preprocess + t3 - t1
@@ -184,15 +197,15 @@ def measure_time_n_v2(n_start, n_end, l, cycle_or_not):
         else:  # cycle
             # TODO: add any-k naive
             print "algo: any-k split version"
-            TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, debug=False)
+            TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, RLmode= "PQ", bound = k, debug = False)
             if len(time_for_each) > 0:
                 time_for_each[0] += t_preprocess
-            TOP_K, time_for_each_old = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=False, debug=False)
+            TOP_K, time_for_each_old = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=False, RLmode= "PQ", bound = k, debug = False)
             if len(time_for_each_old) > 0:
                 time_for_each_old[0] += t_preprocess
             t1 = timeit.default_timer()
             print "algo: enumerate all"
-            CQ.cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l, False)
+            CQ.cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l, False, False)
             t3 = timeit.default_timer()
 
             print ('Time any-k split: ', t_preprocess + sum(time_for_each))
@@ -223,16 +236,16 @@ def measure_time_grow_nl():
             measure_time_l_path(n, l, False)  # acyclic
 
 def measure_time_n(l):
-    n_log = np.logspace(1, 3, 10, endpoint=True)
-    n_line =  range(3, 50, 3)
-    for n in n_line:
-        print int(n)
-        measure_time_l_path(int(n), l, True)  # cyclic
+    n_log = np.logspace(1, 2.5, 15, endpoint=True)
+    #n_line =  range(3, 50, 3)
+    #for n in n_line:
+    #    print int(n)
+    #    measure_time_l_path(int(n), l, True)  # cyclic
         #measure_time_l_path(int(n), l, False)  # acyclic
     for n in n_log:
         print int(n)
         measure_time_l_path(int(n), l, True)  # cyclic
-        #measure_time_l_path(int(n), l, False)  # acyclic
+        measure_time_l_path(int(n), l, False)  # acyclic
 
 def measure_time_l(n):
     for l in range(3, 20):
@@ -270,6 +283,11 @@ def plot(mode, target, target_l):
     l2_any_k_time_path_old = []
     l2_any_k_TTF_path_old = []
 
+    l2_boolean_path = []
+    l2_boolean_cycle = []
+    l2_top1_path = []
+    l2_top1_cycle = []
+
     l_values_cycle = []
     l_values_path = []
 
@@ -288,6 +306,11 @@ def plot(mode, target, target_l):
     n2_any_k_time_path_old = []
     n2_any_k_TTF_path_old = []
 
+    n2_boolean_path = []
+    n2_boolean_cycle = []
+    n2_top1_path = []
+    n2_top1_cycle = []
+
     n_values_cycle = []
     n_values_path = []
     for f in listdir('../time_any'):
@@ -295,10 +318,13 @@ def plot(mode, target, target_l):
             time_for_each = pickle.load(open(join('../time_any', f),'rb'))
             time_for_each_old = pickle.load(open(join('../time_old', f),'rb'))
             timetuple_full = pickle.load(open(join('../time_all', f), 'rb'))
+            timetuple_bool = pickle.load(open(join('../time_bool', f), 'rb'))
             n = int(f.split('_')[0])
             l = int(f.split('_')[1])
             cycle_or_not =  f.split('_')[2] == 'cycle'
             time_for_all = []
+            time_bool = []
+            time_top1 = []
             results_count = []
             time_till_now = []
             time_till_now_old = []
@@ -319,6 +345,9 @@ def plot(mode, target, target_l):
                 accumulated_time_old = time_for_each_old[i] + accumulated_time_old
                 results_count.append(i+1)
                 time_for_all.append(timetuple_full[1])
+                time_bool.append(timetuple_bool[0])
+                time_top1.append(timetuple_bool[1])
+
             if n == target:
                 if cycle_or_not:
                     l2_any_k_TTF_cycle.append(time_for_each[0])
@@ -327,6 +356,8 @@ def plot(mode, target, target_l):
                     l2_any_k_time_cycle_old.append(accumulated_time_old)
                     l2_any_k_average_time_cycle.append(accumulated_time/len(time_for_each))
                     l2_full_time_cycle.append(timetuple_full[1])
+                    l2_boolean_cycle.append(timetuple_bool[0])
+                    l2_top1_cycle.append(timetuple_bool[1])
                     l_values_cycle.append(l)
                 else:
                     l2_any_k_TTF_path.append(time_for_each[0])
@@ -335,6 +366,8 @@ def plot(mode, target, target_l):
                     l2_any_k_time_path_old.append(accumulated_time_old)
                     l2_any_k_average_time_path.append(accumulated_time/len(time_for_each))
                     l2_full_time_path.append(timetuple_full[1])
+                    l2_boolean_path.append(timetuple_bool[0])
+                    l2_top1_path.append(timetuple_bool[1])
                     l_values_path.append(l)
 
             if l == target_l:
@@ -345,6 +378,8 @@ def plot(mode, target, target_l):
                     n2_any_k_time_cycle_old.append(accumulated_time_old)
                     n2_any_k_average_time_cycle.append(accumulated_time/len(time_for_each))
                     n2_full_time_cycle.append(timetuple_full[1])
+                    n2_boolean_cycle.append(timetuple_bool[0])
+                    n2_top1_cycle.append(timetuple_bool[1])
                     n_values_cycle.append(n)
                 else:
                     n2_any_k_TTF_path.append(time_for_each[0])
@@ -353,6 +388,8 @@ def plot(mode, target, target_l):
                     n2_any_k_time_path_old.append(accumulated_time_old)
                     n2_any_k_average_time_path.append(accumulated_time/len(time_for_each))
                     n2_full_time_path.append(timetuple_full[1])
+                    n2_boolean_path.append(timetuple_bool[0])
+                    n2_top1_path.append(timetuple_bool[1])
                     n_values_path.append(n)
 
 
@@ -368,7 +405,7 @@ def plot(mode, target, target_l):
                 else:
                     plt.title('N = ' + str(n) + ', l = ' + str(l) + ', path')
                 plt.ylabel('k')
-                plt.xlabel('Time/Sec')
+                plt.xlabel('time (seconds)')
                 plt.show()
 
     if mode == 2:
@@ -532,12 +569,12 @@ if __name__ == "__main__":
     #measure_time_n_v2(3, 50, 5, False) #5-path
     #plot(1, 0, 0) # any-k property.
 
-    #n = 5
-    #measure_time_l(n)
-    #plot(2, n, 0) # l-scalability
+    n = 5
+    measure_time_l(n)
+    plot(2, n, 0) # l-scalability
 
-    l = 4
-    measure_time_n(l)
+    #l = 4
+    #measure_time_n(l)
     #plot(3, 0, l)  # n-scalability
 
 

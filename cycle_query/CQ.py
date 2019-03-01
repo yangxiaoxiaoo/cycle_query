@@ -165,7 +165,7 @@ def priority_search_l_cycle_naive_init(rel2tuple, tuple2weight, bp_set, bptu2dow
     tuple2rem = heuristic_build_l_cycle(tuple2weight, rel2tuple, bp_set,bptu2down_neis, l)
 
     if Deepak:
-        prev2sortedmap = Deepak_sort_cycle(tuple2rem, tuple2weight, rel2tuple, l)
+        prev2sortedmap = Deepak_sort_cycle(tuple2rem, bp_set, tuple2weight, rel2tuple, l)
 
         for k in prev2sortedmap:
             if k[0] == 0:
@@ -180,11 +180,11 @@ def priority_search_l_cycle_naive_init(rel2tuple, tuple2weight, bp_set, bptu2dow
                 RL.add((globalclass.PEI_cycle(tu, tuple2weight[tu], tuple2rem[(tu, tu[0])], l),))
         return tuple2rem, RL
 
-def priority_search_l_cycle_naive_next(tuple2weight, tu2down_neis, l, RL, tuple2rem, prev2sortedmap, Deepak):
+def priority_search_l_cycle_naive_next(tuple2weight, bptu2down_neis, l, RL, tuple2rem, prev2sortedmap, Deepak):
     #used by a gobal PQ_global.
     #takes a PQ for this sub-database, return the next
     #PQ pass by ref, can be changed.
-    t_start = timeit.default_timer()
+
     while RL.size() != 0:
         (cur_PEI_cycle,) = RL.pop_min()
 
@@ -217,6 +217,9 @@ def priority_search_l_cycle_naive_next(tuple2weight, tu2down_neis, l, RL, tuple2
                 return cur_PEI_cycle
             elif cur_PEI_cycle.instance.length != l-1: # not completed, there is frontier, no need to check breakpoint
                 frontier = cur_PEI_cycle.instance.frontier()
+                bp = cur_PEI_cycle.breakpoint
+                tu2down_neis = bptu2down_neis[bp]
+                #if frontier in tu2down_neis: # now with diffrent bp, this can be out of dict.
                 for neighbor in tu2down_neis[frontier]:
                     if cur_PEI_cycle.mergable(neighbor, tuple2rem):
                         new_PEI = copy.deepcopy(cur_PEI_cycle)
@@ -225,13 +228,16 @@ def priority_search_l_cycle_naive_next(tuple2weight, tu2down_neis, l, RL, tuple2
 
             else:  # length == l, check breakpoint
                 frontier = cur_PEI_cycle.instance.frontier()
+                bp = cur_PEI_cycle.breakpoint
+                tu2down_neis = bptu2down_neis[bp]
+                #if frontier in tu2down_neis:  # now with diffrent bp, this can be out of dict.
                 for neighbor in tu2down_neis[frontier]:
                     if neighbor[1] == cur_PEI_cycle.breakpoint:
                         new_PEI = copy.deepcopy(cur_PEI_cycle)
                         new_PEI.merge(neighbor, tuple2weight, tuple2rem)
                         RL.add((new_PEI,))
-    t_end = timeit.default_timer()
-    return t_end - t_start
+
+
 
 def simple_join(rel2tuple, tuple2weight, tu2down_neis, start, end):
     # used by all light case to compute a dictionary from I1_list to weight
@@ -311,7 +317,6 @@ def priority_search_l_cycle_light_init(rel2tuple, tuple2weight, tu2down_neis, l,
 
 
 def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, RL, bp2sortedmap, Deepak):
-    t_start = timeit.default_timer()
     while RL.size() != 0:
         (cur_PEI_cycle,) = RL.pop_min()
         if Deepak:
@@ -322,6 +327,9 @@ def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, RL, bp2sorte
             #if successor_PEI_cycle != None:
             #    heapq.heappush(PQ, successor_PEI_cycle)
             if cur_PEI_cycle.instance.completion:
+                successor_PEI_cycle = cur_PEI_cycle.bigsucc(breakpoints2I2, I2_list2wgt, bp2sortedmap)
+                if successor_PEI_cycle is not None:
+                    RL.add((successor_PEI_cycle,))
                 return cur_PEI_cycle
             cur_PEI_cycle.bigexpand(breakpoints2I2, I2_list2wgt, bp2sortedmap)
             if not cur_PEI_cycle:
@@ -340,8 +348,8 @@ def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, RL, bp2sorte
                     new_PEI = copy.deepcopy(cur_PEI_cycle)
                     new_PEI.bigmerge(I2_list, I2_list2wgt[tuple(I2_list)])
                     RL.add((new_PEI,))
-    t_end = timeit.default_timer()
-    return t_end - t_start
+
+
 
 
 def heuristic_build_l_cycle(tuple2weight, rel2tuple, breakpoints, bptu2down_neis, l):
@@ -381,25 +389,25 @@ def heuristic_build_l_cycle(tuple2weight, rel2tuple, breakpoints, bptu2down_neis
 
     return tuple2rem
 
-def Deepak_sort_cycle(tuple2rem, tuple2weight, rel2tuple, l):
+def Deepak_sort_cycle(tuple2rem, breakpoints, tuple2weight, rel2tuple, l):
     # l is the goal length, build sorted subtree weights for R0, R1...Rl-1
     key2list = dict() # first map all keys in the output dictionary into a list of (subtree-weight, tuple)
-    breakpoints = set()
 
-    for i in range(l-1, -1, -1):
+    for bp in breakpoints:
+        for i in range(l-1, -1, -1):
 
-        relation = 'R' + str(i)
-        if i == l-1:
-            for t in rel2tuple[relation]:
-                breakpoints.add(t[1])
-                if (i, t[0], t[1]) in key2list:
-                    key2list[i, t[0], t[1]].append((tuple2weight[t], t))
-                else:
-                    key2list[i, t[0], t[1]] = [(tuple2weight[t], t)]
+            relation = 'R' + str(i)
+            #if i == l-1:
+            #    for t in rel2tuple[relation]:
+            #        if t[1] == bp:
+            #            if (i, t[0], t[1]) in key2list:
+            #                key2list[i, t[0], t[1]].append((tuple2weight[t], t))
+            #            else:
+            #                key2list[i, t[0], t[1]] = [(tuple2weight[t], t)]
 
-        else:
-            for t in rel2tuple[relation]:
-                for bp in breakpoints:
+            if True:
+                for t in rel2tuple[relation]:
+
                     if (t, bp) in tuple2rem:
                         if (i, t[0], bp) in key2list:
                             key2list[i, t[0], bp].append((tuple2weight[t] + tuple2rem[t, bp], t))
@@ -937,7 +945,9 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmod
         else:  # all light partition
 
             next_result = priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, small_RL_list[l], bp2sortedmap, Deepak)
-            if isinstance(next_result, globalclass.PEI_lightcycle) and (len(TOP_K)== 0 or len(TOP_K)!= 0 and next_result.instance.R_list != TOP_K[-1].instance.R_list):  # when there is no next, maybe nontype.
+            if not next_result:
+                head_values[top_pos] = 99999999
+            elif isinstance(next_result, globalclass.PEI_lightcycle) and (len(TOP_K)== 0 or len(TOP_K)!= 0):# and next_result.instance.R_list != TOP_K[-1].instance.R_list):  # when there is no next, maybe nontype.
                 TOP_K.append(next_result)
                 time_end = timeit.default_timer()
                 time_for_each.append(time_end - time_start)
@@ -946,7 +956,9 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmod
                 head_values[top_pos] = 99999999
         
         ## Append to TOPK
-        if len(TOP_K)== 0 or next_result.instance.R_list != TOP_K[-1].instance.R_list:
+        if not next_result:
+            head_values[top_pos] = 99999999
+        elif len(TOP_K)== 0 or next_result.instance.R_list != TOP_K[-1].instance.R_list:
             TOP_K.append(next_result)
             ## Decrease the size of all RLs
             for small_RL in small_RL_list:    
@@ -1056,7 +1068,7 @@ def run_cycle_example(n, l, k, RLmode, bound):
     import DataGenerator
 
     rel2tuple, tuple2weight = DataGenerator.getDatabase("Cycle", n, l, "Full", "HardCase", 2)
-    tu2down_neis, tu2up_neis = path_SJ_reduce_l(rel2tuple, l)
+    tu2down_neis, tu2up_neis = cycle_SJ_reduce_l_light(rel2tuple, l)
     print "Cycle algo: any-k sort"
     TOP_K_sort, time_for_each_sort = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, RLmode= RLmode, bound = bound, debug = True)
     for PEI in TOP_K_sort:
@@ -1072,6 +1084,9 @@ def run_cycle_example(n, l, k, RLmode, bound):
     if len(TOP_K_max) != len(TOP_K_sort): 
         print "== Error (Cycle)!!! Not the same length!"
     for i in range(len(TOP_K_max)):
+        print TOP_K_max[i].wgt
+        print TOP_K_sort[i].wgt
+        assert format(TOP_K_max[i].wgt, '.4f') == format(TOP_K_sort[i].wgt, '.4f')
         if not TOP_K_max[i].same_as(TOP_K_sort[i]):
             print "== Error (Cycle)!!! Sort and max different results!"
 
@@ -1079,6 +1094,7 @@ def run_cycle_example(n, l, k, RLmode, bound):
         print "== Error (Cycle)!!! FE produces different amount of results!"
 
     for i in range(len(TOP_K_max)):
+        assert format(TOP_K_max[i].wgt, '.4f') == format(sorted_values[i], '.4f')
         if format(TOP_K_max[i].wgt, '.4f') != format(sorted_values[i], '.4f'):
             print "== Error (Cycle)!!! " + str(TOP_K_max[i].wgt) + " different than " + str(sorted_values[i])
 
@@ -1089,8 +1105,9 @@ if __name__ == "__main__":
 
     #test_correctness()
     #while(True):
-    #run_path_example(n=50, l=5, k=5, RLmode="PQ", bound=None)
-    run_cycle_example(n=50, l=3, k=5, RLmode="PQ", bound=5)
+    run_path_example(n=50, l=5, k=5, RLmode="PQ", bound=None)
+    while True:
+        run_cycle_example(n=50, l=3, k=5, RLmode="PQ", bound=None)
 
 
 
