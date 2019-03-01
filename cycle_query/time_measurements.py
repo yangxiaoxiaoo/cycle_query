@@ -165,7 +165,7 @@ def measure_time_n_v2(n_start, n_end, l, cycle_or_not):
             (queryType, n, l, DensityOfEdges, edgeDistribution, 1)
 
         t_start = timeit.default_timer()
-        tu2down_neis, tu2up_neis = CQ.cycle_SJ_reduce_l(rel2tuple, l)
+        tu2down_neis, tu2up_neis = CQ.cycle_SJ_reduce_l_light(rel2tuple, l)
         t_end = timeit.default_timer()
         t_preprocess = t_end - t_start  # the time_any to preprocess and build the relation maps.
         k = 9999999999
@@ -313,7 +313,7 @@ def plot(mode, target, target_l):
 
     n_values_cycle = []
     n_values_path = []
-    for f in listdir('../time_any'):
+    for f in sorted(listdir('../time_any')):
         if isfile(join('../time_any', f)) and isfile(join('../time_all', f)):
             time_for_each = pickle.load(open(join('../time_any', f),'rb'))
             time_for_each_old = pickle.load(open(join('../time_old', f),'rb'))
@@ -330,7 +330,9 @@ def plot(mode, target, target_l):
             time_till_now_old = []
             accumulated_time = 0
             accumulated_time_old = 0 # not deepak improved
-
+            if n == 5:
+                print "another measurment "
+                continue
             if len(time_for_each) == 0:
                 print "no result for this query"
                 continue
@@ -395,16 +397,17 @@ def plot(mode, target, target_l):
 
             if mode == 1:
                 #plt.plot(time_till_now, results_count, 'r--', time_till_now, results_count, 'b--')
-                line_1, = plt.plot(time_till_now, results_count, 'r--', label='line 1')
-                line_2, = plt.plot(time_for_all, results_count, 'b--', label='Line 2')
-                line_3, = plt.plot(time_till_now_old, results_count, 'g--', label='Line 3')
+                results_count_k = np.true_divide(results_count, 1000)
+                line_1, = plt.plot(time_till_now, results_count_k, 'r', label='line 1')
+                line_2, = plt.plot(time_for_all, results_count_k, 'b', label='Line 2')
+                line_3, = plt.plot(time_till_now_old, results_count_k, 'g', label='Line 3')
 
                 plt.legend([line_1, line_2, line_3], ['any-k sort', 'full ranking', 'any-k max'])
                 if cycle_or_not:
                     plt.title('N = '+ str(n) + ', l = ' + str(l) + ', cycle')
                 else:
                     plt.title('N = ' + str(n) + ', l = ' + str(l) + ', path')
-                plt.ylabel('k')
+                plt.ylabel('number of results (Thousands)')
                 plt.xlabel('time (seconds)')
                 plt.show()
 
@@ -419,14 +422,20 @@ def plot(mode, target, target_l):
         line_3, = plt.plot(l_values_cycle, l2_any_k_time_cycle_old, 'o', label='line 3')
         line_3_, = plt.plot(l_values_cycle, l2_any_k_TTF_cycle_old, 'o', label='line 3_')
 
-        compare1 = np.power(2, l_values_cycle)
+        compare1 = np.power(1.85, l_values_cycle)
         compare1 = np.true_divide(compare1, 50000)
+        compare1 = [x for _, x in sorted(zip(l_values_cycle, compare1))]
         compare2 = l_values_cycle
         compare2 = np.true_divide(compare2, 50000)
-        line_4, = plt.plot(l_values_cycle, compare1, label='line 4')
-        line_5, = plt.plot(l_values_cycle, compare2, label='line 5')
+        compare2 = [x for _, x in sorted(zip(l_values_cycle, compare2))]
 
-        plt.legend([line_1, line_1_, line_2, line_3, line_3_, line_4, line_5], ['any-k sort TTL', 'any-k sort TTF', 'full ranking TTF/TTL', 'any-k max TTL', 'any-k max TTF', 'n^(l/2)', "l"])
+        line_4, = plt.plot(sorted(l_values_cycle), compare1, label='line 4')
+        line_5, = plt.plot(sorted(l_values_cycle), compare2, label='line 5')
+
+        line_6, = plt.plot(l_values_cycle, l2_boolean_cycle, 'o', label='line 6')
+        line_7, = plt.plot(l_values_cycle, l2_top1_cycle, 'o', label='line 7')
+
+        plt.legend([line_1, line_1_, line_2, line_3, line_3_, line_4, line_5, line_6, line_7], ['any-k sort TTL', 'any-k sort TTF', 'full ranking TTF/TTL', 'any-k max TTL', 'any-k max TTF', 'n^(l/2)', "l", "boolean", "top-1"])
         plt.title('Cycle')
         plt.show()
         #plt.xlabel('l')
@@ -449,14 +458,20 @@ def plot(mode, target, target_l):
         line_3, = plt.plot(l_values_path, l2_any_k_time_path_old, 'o', label='line 3')
         line_3_, = plt.plot(l_values_path, l2_any_k_TTF_path_old, 'o', label='line 3_')
 
-        compare1 = np.power(2, l_values_cycle)
-        compare1 = np.true_divide(compare1, 50000)
+        compare1 = np.power(1.85, l_values_path)
+        compare1 = np.true_divide(compare1, 5000)
+        compare1 = [x for _,x in sorted(zip(l_values_path,compare1))]
         compare2 = l_values_cycle
         compare2 = np.true_divide(compare2, 50000)
-        line_4, = plt.plot(l_values_cycle, compare1, label='line 4')
-        line_5, = plt.plot(l_values_cycle, compare2, label='line 5')
+        compare2 = [x for _, x in sorted(zip(l_values_path, compare2))]
+        line_4, = plt.plot(sorted(l_values_path), compare1, label='line 4')
+        line_5, = plt.plot(sorted(l_values_path), compare2, label='line 5')
 
-        plt.legend([line_1, line_1_, line_2, line_3, line_3_, line_4, line_5], ['any-k sort TTL', 'any-k sort TTF', 'full ranking', 'any-k max TTL', 'any-k max TTF', 'n^(l -1 )', "l"])
+
+        line_6, = plt.plot(l_values_path, l2_boolean_path, 'o', label='line 6')
+        line_7, = plt.plot(l_values_path, l2_top1_path, 'o', label='line 7')
+
+        plt.legend([line_1, line_1_, line_2, line_3, line_3_, line_4, line_5, line_6, line_7], ['any-k sort TTL', 'any-k sort TTF', 'full ranking', 'any-k max TTL', 'any-k max TTF', 'n^(l -1 )', "l","boolean", "top-1"])
         plt.title('Path')
         plt.show()
 
@@ -490,16 +505,24 @@ def plot(mode, target, target_l):
         line_3_, = plt.plot(n_values_cycle, n2_any_k_TTF_cycle_old, 'o', label='line 3_')
 
         compare1 = np.power(n_values_cycle, exp)
+        compare1 = np.true_divide(compare1, 10)
         compare1 = np.multiply(compare1, np.log(compare1))
-        compare1 = np.true_divide(compare1, 500000)
+        compare1 = [x for _, x in sorted(zip(n_values_cycle, compare1))]
+        compare1 = np.true_divide(compare1, 40000)
         compare2 = np.power(n_values_cycle, 2)
-
+        compare2 = np.true_divide(compare2, 10)
         compare2 = np.multiply(compare2, np.log(compare2))
-        compare2 = np.true_divide(compare2, 500000)
-        line_4, = plt.plot(n_values_cycle, compare1 , label='line 4')
-        line_5, = plt.plot(n_values_cycle, compare2, label='line 5')
-        plt.legend([line_1, line_1_, line_2, line_3, line_3_, line_4, line_5],
-                   ['any-k sort TTL', 'any-k sort TTF', 'full ranking TTF/TTL', 'any-k max TTL', 'any-k max TTF', 'n^'+ str(exp)+' log n' , 'n^2 log n'])
+        compare2 = np.true_divide(compare2, 50000)
+
+        compare2 = [x for _, x in sorted(zip(n_values_cycle, compare2))]
+
+        line_4, = plt.plot(sorted(n_values_cycle), compare1 , label='line 4')
+        line_5, = plt.plot(sorted(n_values_cycle), compare2, label='line 5')
+
+        line_6, = plt.plot(n_values_cycle, n2_boolean_cycle, 'o', label='line 6')
+        line_7, = plt.plot(n_values_cycle, n2_top1_cycle, 'o', label='line 7')
+        plt.legend([line_1, line_1_, line_2, line_3, line_3_, line_4, line_5, line_6, line_7],
+                   ['any-k sort TTL', 'any-k sort TTF', 'full ranking TTF/TTL', 'any-k max TTL', 'any-k max TTF', 'n^'+ str(exp)+' log n' , 'n^2 log n',"boolean", "top-1"])
         plt.title('4-Cycle')
         plt.show()
         plt.xlabel('n')
@@ -528,18 +551,25 @@ def plot(mode, target, target_l):
         line_3, = plt.plot(n_values_path, n2_any_k_time_path_old, 'o', label='line 3')
         line_3_, = plt.plot(n_values_path, n2_any_k_TTF_path_old, 'o', label='Line 3_')
 
-        compare1 = np.power(n_values_cycle, exp)
-        compare1 = np.multiply(compare1, np.log(compare1))
+        compare1 = np.power(n_values_path, exp)
+        #compare1 = np.true_divide(compare1, 0.001)
+        #compare1 = np.multiply(compare1, np.log(compare1))
+        compare1 = [x for _, x in sorted(zip(n_values_path, compare1))]
         compare1 = np.true_divide(compare1, 500000)
-        compare2 = np.power(n_values_cycle, 1)
 
+        compare2 = np.power(n_values_path, 1)
+        compare2 = np.true_divide(compare2, 5)
         compare2 = np.multiply(compare2, np.log(compare2))
-        compare2 = np.true_divide(compare2, 50000)
-        line_4, = plt.plot(n_values_cycle, compare1, label='line 4')
-        line_5, = plt.plot(n_values_cycle, compare2, label='line 5')
+        compare2 = [x for _, x in sorted(zip(n_values_path, compare2))]
+        compare2 = np.true_divide(compare2, 5000)
+        line_4, = plt.plot(sorted(n_values_path), compare1, label='line 4')
+        line_5, = plt.plot(sorted(n_values_path), compare2, label='line 5')
 
-        plt.legend([line_1, line_1_, line_2, line_3, line_3_, line_4, line_5],
-                   ['any-k sort TTL', 'any-k sort TTF', 'full ranking TTF/TTL', 'any-k max TTL', 'any-k max TTF', 'n^' + str(exp) + ' log n', 'n log n'])
+        line_6, = plt.plot(n_values_path, n2_boolean_path, 'o', label='line 6')
+        line_7, = plt.plot(n_values_path, n2_top1_path, 'o', label='line 7')
+
+        plt.legend([line_1, line_1_, line_2, line_3, line_3_, line_4, line_5, line_6, line_7],
+                   ['any-k sort TTL', 'any-k sort TTF', 'full ranking TTF/TTL', 'any-k max TTL', 'any-k max TTF', 'n^' + str(exp) + ' log n', 'n log n',"boolean", "top-1"])
         plt.title('4-Path')
         plt.show()
 
@@ -565,13 +595,13 @@ if __name__ == "__main__":
     #plot(2, 15)
     #measure_time_grow_v2()
 
-    #measure_time_n_v2(3, 50, 5, True) #5-cycle
-    #measure_time_n_v2(3, 50, 5, False) #5-path
-    #plot(1, 0, 0) # any-k property.
+    #measure_time_n_v2(3, 50, 4, True) #4-cycle
+    #measure_time_n_v2(3, 50, 4, False) #4-path
+    plot(1, 0, 0) # any-k property.
 
-    n = 5
-    measure_time_l(n)
-    plot(2, n, 0) # l-scalability
+    #n = 5
+    #measure_time_l(n)
+    #plot(2, n, 0) # l-scalability
 
     #l = 4
     #measure_time_n(l)
