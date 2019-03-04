@@ -3,12 +3,12 @@
 import sys 
 import os
 sys.path.append(os.path.abspath("../cycle_query"))
-import DataGenerator
 import HRJNstar
 import timeit
 import pickle
 import semi_join_utils
 import CQ
+import data_loader
 
 def sanitize_times(time_for_each, t_preprocess):
     time_for_each[0] += t_preprocess
@@ -20,112 +20,70 @@ def sanitize_times(time_for_each, t_preprocess):
     return res
 
 ## Fixed
-l = 4
-k_limit = 9999999999
+max_id = 100
+l = 5
+k_limit = sys.maxsize
 
 ## Input relations
-rel2tuple = pickle.load(open("Twitter_tuples.pkl",'rb'))
-tuple2weight = pickle.load(open("Twitter_weights.pkl",'rb'))
+rel2tuple, tuple2weight = data_loader.load_twitter("../Experiment_Twitter/", "Twitter_truncated", max_id, l)
 #DataGenerator.printRelations(rel2tuple)
 
 ## Preprocess
 t_start = timeit.default_timer()
-tu2down_neis, tu2up_neis = CQ.cycle_SJ_reduce_l(rel2tuple, l)
+_, tu2down_neis, tu2up_neis = CQ.cycle_SJ_reduce_l(rel2tuple, l)
 t_end = timeit.default_timer()
 t_preprocess = t_end - t_start
+print "Done with preprocessing  at " + str(t_preprocess) + " sec"
 
 ## First run batch ranking
 t1 = timeit.default_timer()
 results, sorted_values = CQ.cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k_limit, l, False, debug= False)
 t2 = timeit.default_timer()
 t_batch  =  t_preprocess + t2 - t1
-f = open("outs/batch_ranking", "w")
+f = open("outs/batch_ranking.out", "w")
 f.write("Time = " + str(t_batch) + "\n")
 num_of_results = len(sorted_values)
-f.write("Results = " + str(num_of_results))
+f.write("Results = " + str(num_of_results) + "\n")
+num_of_tuples = len(rel2tuple["R0"])
+f.write("Number of tuples (Twitter edges) = " + str(num_of_tuples))
 f.close()
 print "Done with batch ranking"
 
 ## Run anyk-max unbounded
+'''
 data_structure_list = ["PQ", "Btree"]
 for ds in data_structure_list:
     TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k_limit, l, Deepak=False, RLmode= "PQ", bound = None, debug = False)
     times = sanitize_times(time_for_each, t_preprocess)
-    f = open("outs/anyk_max_" + ds + "_unbounded", "w")
+    f = open("outs/anyk_max_" + ds + "_unbounded.out", "w")
     for i in range(len(times)):
         f.write("k = " + str(i + 1) + " : " + str(times[i]) + "\n")
     f.close()
     print "Done with anyk_max_" + ds + "_unbounded"
+'''
 
 ## Run anyk-sort unbounded
 data_structure_list = ["PQ", "Btree"]
 for ds in data_structure_list:
     TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k_limit, l, Deepak=True, RLmode= "PQ", bound = None, debug = False)
     times = sanitize_times(time_for_each, t_preprocess)
-    f = open("outs/anyk_sort_" + ds + "_unbounded", "w")
+    f = open("outs/anyk_sort_" + ds + "_unbounded.out", "w")
     for i in range(len(times)):
         f.write("k = " + str(i + 1) + " : " + str(times[i]) + "\n")
     f.close()
     print "Done with anyk_sort_" + ds + "_unbounded"
 
+## Run Boolean
 '''
-k_list = range(1, num_of_results + 1, 1000)
+exist, time_bool = l_path_bool(rel2tuple, l)
+f = open("outs/boolean.out", "w")
+f.write("Time = " + str(time_bool) + "\n")
+f.close()
+print "Done with boolean"
 
-## Run anyk-max bounded
-data_structure_list = ["Btree", "Treap"]
-for ds in data_structure_list:
-    times = []
-    for k in k_list:
-        t1 = timeit.default_timer()
-        TOP_K, time_for_each = CQ.priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= False, RLmode = ds, bound = k, debug = False)
-        t2 = timeit.default_timer()
-        times.append(t2 - t1 + t_preprocess)
-    f = open("outs/anyk_max_" + ds + "_bounded", "w")
-    for i in range(len(times)):
-        f.write("k = " + str(k_list[i]) + " : " + str(times[i]) + "\n")
-    f.close()
-    print "Done with anyk_max_" + ds + "_bounded"
-
-## Run anyk-sort bounded
-data_structure_list = ["Btree", "Treap"]
-for ds in data_structure_list:
-    times = []
-    for k in k_list:
-        t1 = timeit.default_timer()
-        TOP_K, time_for_each = CQ.priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= True, RLmode = ds, bound = k, debug = False)
-        t2 = timeit.default_timer()
-        times.append(t2 - t1 + t_preprocess)
-    f = open("outs/anyk_sort_" + ds + "_bounded", "w")
-    for i in range(len(times)):
-        f.write("k = " + str(k_list[i]) + " : " + str(times[i]) + "\n")
-    f.close()
-    print "Done with anyk_sort_" + ds + "_bounded"
-
-## Run HRJN*
-data_structure_list = ["PQ", "Btree", "Treap"]
-for ds in data_structure_list:
-    times = []
-    for k in k_list:
-        t1 = timeit.default_timer()
-        res = HRJNstar.hrjn_main(rel2tuple, tuple2weight, k, l, ds, bound = False)
-        t2 = timeit.default_timer()
-        times.append(t2 - t1 + t_preprocess)
-    f = open("outs/HRJN_" + ds + "_unbounded", "w")
-    for i in range(len(times)):
-        f.write("k = " + str(k_list[i]) + " : " + str(times[i]) + "\n")
-    f.close()
-    print "Done with HRJN_" + ds + "_unbounded"
-data_structure_list = ["Btree", "Treap"]
-for ds in data_structure_list:
-    times = []
-    for k in k_list:
-        t1 = timeit.default_timer()
-        res = HRJNstar.hrjn_main(rel2tuple, tuple2weight, k, l, ds, bound = True)
-        t2 = timeit.default_timer()
-        times.append(t2 - t1 + t_preprocess)
-    f = open("outs/HRJN_" + ds + "_bounded", "w")
-    for i in range(len(times)):
-        f.write("k = " + str(k_list[i]) + " : " + str(times[i]) + "\n")
-    f.close()
-    print "Done with HRJN_" + ds + "_bounded"
+Top1, time_top1 = l_path_top1(rel2tuple, tuple2weight, tu2down_neis, l)
+f = open("outs/top1.out", "w")
+f.write("Time = " + str(t_preprocess + time_top1) + "\n")
+f.close()
+print "Done with top1"
 '''

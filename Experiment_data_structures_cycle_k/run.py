@@ -22,7 +22,7 @@ def sanitize_times(time_for_each, t_preprocess):
 ## Fixed
 n = 200
 l = 5
-k_limit = 999999999
+k_limit = sys.maxsize
 
 rel2tuple, tuple2weight = DataGenerator.getDatabase("Cycle", n, l, "Full", "HardCase", 2)
 ## Output dictionaries
@@ -35,7 +35,7 @@ outFile2.close()
 
 ## Preprocess
 t_start = timeit.default_timer()
-tu2down_neis, tu2up_neis = CQ.cycle_SJ_reduce_l(rel2tuple, l)
+_, tu2down_neis, tu2up_neis = CQ.cycle_SJ_reduce_l(rel2tuple, l)
 t_end = timeit.default_timer()
 t_preprocess = t_end - t_start
 
@@ -44,7 +44,7 @@ t1 = timeit.default_timer()
 results, sorted_values = CQ.cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k_limit, l, False, debug= False)
 t2 = timeit.default_timer()
 t_batch  =  t_preprocess + t2 - t1
-f = open("outs/batch_ranking", "w")
+f = open("outs/batch_ranking.out", "w")
 f.write("Time = " + str(t_batch))
 f.close()
 num_of_results = len(sorted_values)
@@ -55,7 +55,7 @@ data_structure_list = ["PQ", "Btree", "Treap"]
 for ds in data_structure_list:
     TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k_limit, l, Deepak=False, RLmode= ds, bound = None, debug = False)
     times = sanitize_times(time_for_each, t_preprocess)
-    f = open("outs/anyk_max_" + ds + "_unbounded", "w")
+    f = open("outs/anyk_max_" + ds + "_unbounded.out", "w")
     for i in range(len(times)):
         f.write("k = " + str(i + 1) + " : " + str(times[i]) + "\n")
     f.close()
@@ -66,7 +66,7 @@ data_structure_list = ["PQ", "Btree", "Treap"]
 for ds in data_structure_list:
     TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k_limit, l, Deepak=True, RLmode= ds, bound = None, debug = False)
     times = sanitize_times(time_for_each, t_preprocess)
-    f = open("outs/anyk_sort_" + ds + "_unbounded", "w")
+    f = open("outs/anyk_sort_" + ds + "_unbounded.out", "w")
     for i in range(len(times)):
         f.write("k = " + str(i + 1) + " : " + str(times[i]) + "\n")
     f.close()
@@ -84,7 +84,7 @@ for ds in data_structure_list:
         TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=False, RLmode= ds, bound = k, debug = False)
         t2 = timeit.default_timer()
         times.append(t2 - t1 + t_preprocess)
-    f = open("outs/anyk_max_" + ds + "_bounded", "w")
+    f = open("outs/anyk_max_" + ds + "_bounded.out", "w")
     for i in range(len(times)):
         f.write("k = " + str(k_list[i]) + " : " + str(times[i]) + "\n")
     f.close()
@@ -99,7 +99,7 @@ for ds in data_structure_list:
         TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, RLmode= ds, bound = k, debug = False)
         t2 = timeit.default_timer()
         times.append(t2 - t1 + t_preprocess)
-    f = open("outs/anyk_sort_" + ds + "_bounded", "w")
+    f = open("outs/anyk_sort_" + ds + "_bounded.out", "w")
     for i in range(len(times)):
         f.write("k = " + str(k_list[i]) + " : " + str(times[i]) + "\n")
     f.close()

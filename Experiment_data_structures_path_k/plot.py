@@ -35,7 +35,7 @@ yLabel = arg_results.yLabel
 
 ## First find batch
 if batch_flag:
-	f = open("outs/batch_ranking", "r")
+	f = open("outs/batch_ranking.out", "r")
 	line = f.readline()
 	tokens = line.split()
 	batch = float(tokens[2])
@@ -47,7 +47,7 @@ data = {}
 for impl in impl_list_bounded:
 	data[impl] = []
 	k_list_bounded[impl] = []
-	f = open("outs/" + impl, 'r')
+	f = open("outs/" + impl + ".out", 'r')
 	line = f.readline()
 	while line:
 		if line.startswith("k ="):
@@ -60,7 +60,7 @@ for impl in impl_list_bounded:
 for impl in impl_list_unbounded:
 	data[impl] = []
 	k_list_unbounded[impl] = []
-	f = open("outs/" + impl, 'r')
+	f = open("outs/" + impl + ".out", 'r')
 	line = f.readline()
 	while line:
 		if line.startswith("k ="):

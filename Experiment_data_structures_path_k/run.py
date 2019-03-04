@@ -20,8 +20,9 @@ def sanitize_times(time_for_each, t_preprocess):
     return res
 
 ## Fixed
-n = 50
+n = 30
 l = 5
+k_limit = sys.maxsize
 
 rel2tuple, tuple2weight = DataGenerator.getDatabase("Path", n, l, "Full", "HardCase", 2)
 ## Output dictionaries
@@ -40,10 +41,10 @@ t_preprocess = t_end - t_start
 
 ## First run batch ranking
 t1 = timeit.default_timer()
-res_batch = CQ.path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis, 9999999, l, debug = False)
+res_batch = CQ.path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis, k_limit, l, debug = False)
 t2 = timeit.default_timer()
 t_batch  =  t_preprocess + t2 - t1
-f = open("outs/batch_ranking", "w")
+f = open("outs/batch_ranking.out", "w")
 f.write("Time = " + str(t_batch))
 f.close()
 num_of_results = len(res_batch)
@@ -52,9 +53,9 @@ print "Done with batch ranking"
 ## Run anyk-max unbounded
 data_structure_list = ["PQ", "Btree", "Treap"]
 for ds in data_structure_list:
-    TOP_K, time_for_each = CQ.priority_search_l_path(9999999, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= False, RLmode = ds, bound = None, debug = False)
+    TOP_K, time_for_each = CQ.priority_search_l_path(k_limit, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= False, RLmode = ds, bound = None, debug = False)
     times = sanitize_times(time_for_each, t_preprocess)
-    f = open("outs/anyk_max_" + ds + "_unbounded", "w")
+    f = open("outs/anyk_max_" + ds + "_unbounded.out", "w")
     for i in range(len(times)):
         f.write("k = " + str(i + 1) + " : " + str(times[i]) + "\n")
     f.close()
@@ -63,9 +64,9 @@ for ds in data_structure_list:
 ## Run anyk-sort unbounded
 data_structure_list = ["PQ", "Btree", "Treap"]
 for ds in data_structure_list:
-    TOP_K, time_for_each = CQ.priority_search_l_path(9999999, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= True, RLmode = ds, bound = None, debug = False)
+    TOP_K, time_for_each = CQ.priority_search_l_path(k_limit, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= True, RLmode = ds, bound = None, debug = False)
     times = sanitize_times(time_for_each, t_preprocess)
-    f = open("outs/anyk_sort_" + ds + "_unbounded", "w")
+    f = open("outs/anyk_sort_" + ds + "_unbounded.out", "w")
     for i in range(len(times)):
         f.write("k = " + str(i + 1) + " : " + str(times[i]) + "\n")
     f.close()
@@ -83,7 +84,7 @@ for ds in data_structure_list:
         TOP_K, time_for_each = CQ.priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= False, RLmode = ds, bound = k, debug = False)
         t2 = timeit.default_timer()
         times.append(t2 - t1 + t_preprocess)
-    f = open("outs/anyk_max_" + ds + "_bounded", "w")
+    f = open("outs/anyk_max_" + ds + "_bounded.out", "w")
     for i in range(len(times)):
         f.write("k = " + str(k_list[i]) + " : " + str(times[i]) + "\n")
     f.close()
@@ -98,7 +99,7 @@ for ds in data_structure_list:
         TOP_K, time_for_each = CQ.priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= True, RLmode = ds, bound = k, debug = False)
         t2 = timeit.default_timer()
         times.append(t2 - t1 + t_preprocess)
-    f = open("outs/anyk_sort_" + ds + "_bounded", "w")
+    f = open("outs/anyk_sort_" + ds + "_bounded.out", "w")
     for i in range(len(times)):
         f.write("k = " + str(k_list[i]) + " : " + str(times[i]) + "\n")
     f.close()
@@ -113,7 +114,7 @@ for ds in data_structure_list:
         res = HRJNstar.hrjn_main(rel2tuple, tuple2weight, k, l, ds, bound = False)
         t2 = timeit.default_timer()
         times.append(t2 - t1 + t_preprocess)
-    f = open("outs/HRJN_" + ds + "_unbounded", "w")
+    f = open("outs/HRJN_" + ds + "_unbounded.out", "w")
     for i in range(len(times)):
         f.write("k = " + str(k_list[i]) + " : " + str(times[i]) + "\n")
     f.close()
@@ -126,7 +127,7 @@ for ds in data_structure_list:
         res = HRJNstar.hrjn_main(rel2tuple, tuple2weight, k, l, ds, bound = True)
         t2 = timeit.default_timer()
         times.append(t2 - t1 + t_preprocess)
-    f = open("outs/HRJN_" + ds + "_bounded", "w")
+    f = open("outs/HRJN_" + ds + "_bounded.out", "w")
     for i in range(len(times)):
         f.write("k = " + str(k_list[i]) + " : " + str(times[i]) + "\n")
     f.close()
