@@ -20,7 +20,7 @@ def sanitize_times(time_for_each, t_preprocess):
     return res
 
 ## Fixed
-n = 30
+n = 50
 l = 5
 k_limit = sys.maxsize
 
