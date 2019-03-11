@@ -421,12 +421,14 @@ def plot(mode, target, target_l):
         line_2, = plt.plot(l_values_cycle, l2_full_time_cycle, 'o', label='Line 2')
         line_3, = plt.plot(l_values_cycle, l2_any_k_time_cycle_old, 's', label='line 3')
         line_3_, = plt.plot(l_values_cycle, l2_any_k_TTF_cycle_old, '+', label='line 3_')
-
-        compare1 = np.power(1.89, l_values_cycle)
+        if target == 5:
+            compare1 = np.power(1.89, l_values_cycle)
+        else:
+            compare1 = np.power(2.6, l_values_path)
         compare1 = np.true_divide(compare1, 50000)
         compare1 = [x for _, x in sorted(zip(l_values_cycle, compare1))]
         compare2 = l_values_cycle
-        compare2 = np.true_divide(compare2, 50000)
+        compare2 = np.true_divide(compare2, 20000) - 10/20000
         compare2 = [x for _, x in sorted(zip(l_values_cycle, compare2))]
 
         line_4, = plt.plot(sorted(l_values_cycle), compare1, label='line 4')
@@ -455,11 +457,15 @@ def plot(mode, target, target_l):
         plt.xlabel('l')
         plt.ylabel('time (seconds)')
         plt.yscale('log')
-        compare1 = np.power(1.89, l_values_path)
-        compare1 = np.true_divide(compare1, 5000)
+        if target == 5:
+            compare1 = np.power(1.89, l_values_path)
+        else:
+            compare1 = np.power(2.58, l_values_path)
+
+        compare1 = np.true_divide(compare1, 8000)
         compare1 = [x for _, x in sorted(zip(l_values_path, compare1))]
         compare2 = l_values_path
-        compare2 = np.true_divide(compare2, 50000)
+        compare2 = np.true_divide(compare2, 20000)- 10/2000
         compare2 = [x for _, x in sorted(zip(l_values_path, compare2))]
 
 
@@ -611,12 +617,12 @@ if __name__ == "__main__":
     #measure_time_n_v2(3, 50, 4, False) #4-path
     #plot(1, 0, 0) # any-k property.
 
-    n = 10
-    measure_time_l(n)
+    #n = 10
+    #measure_time_l(n)
     #plot(2, n, 0) # l-scalability
 
-    #l = 4
-    #measure_time_n(l)
+    l = 4
+    measure_time_n(l)
     #plot(3, 0, l)  # n-scalability
 
 
