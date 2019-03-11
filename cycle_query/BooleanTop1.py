@@ -33,6 +33,10 @@ def l_cycle_split_bool(rel2tuple, tuple2weight, l):
                 if len(rel2tuplebp[bp][r]) == 0:
                     cur_bool = False
             res = cur_bool or res
+            if res: # pre-exit
+                time_end = timeit.default_timer()
+                return res, time_end - time_start
+
             # if one bp is True, then total true. If one partition true, then total true.
         
     # TODO add all light one

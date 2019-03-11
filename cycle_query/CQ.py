@@ -870,6 +870,8 @@ def l_cycle_naive(l, k):
 '''
 
 def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmode, bound, debug):
+    time_start = timeit.default_timer()
+
     partitions = l_cycle_database_partition(rel2tuple, l)
     small_RL_list = []
     tuple2rem_list = []
@@ -880,7 +882,7 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmod
     prev2sortedmap = None
     prev2sortedmaps = []
 
-    time_start = timeit.default_timer()
+
 
     for partition_index in range(l):
         # with a heavy case: call naive

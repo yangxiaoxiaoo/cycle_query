@@ -52,7 +52,7 @@ def measure_time_l_path(n, l, cycle_or_not):
 
     else:  # cycle
         t_start = timeit.default_timer()
-        tu2down_neis, tu2up_neis = CQ.cycle_SJ_reduce_l_light(rel2tuple, l)
+        tu2down_neis, tu2up_neis = CQ.path_SJ_reduce_l(rel2tuple, l)
         t_end = timeit.default_timer()
         t_preprocess = t_end - t_start  # the time_any to preprocess and build the relation maps.
 
@@ -61,14 +61,14 @@ def measure_time_l_path(n, l, cycle_or_not):
         TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, RLmode= "PQ", bound = None, debug = False)
 
         if len(time_for_each) > 0:
-            time_for_each[0] = t_preprocess
+            #time_for_each[0] = t_preprocess
             time_for_each[0] += t_preprocess
 
         TOP_K, time_for_each_old = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=False,
                                                                   RLmode="PQ", bound=None, debug=False)
 
         if len(time_for_each_old) > 0:
-            time_for_each_old[0] = t_preprocess
+            #time_for_each_old[0] = t_preprocess
             time_for_each_old[0] += t_preprocess
 
 
@@ -314,7 +314,7 @@ def plot(mode, target, target_l):
     n_values_cycle = []
     n_values_path = []
     for f in sorted(listdir('../time_any')):
-        if isfile(join('../time_any', f)) and isfile(join('../time_all', f)):
+        if isfile(join('../time_any', f)) and isfile(join('../time_all', f)) and isfile(join('../time_bool', f)):
             time_for_each = pickle.load(open(join('../time_any', f),'rb'))
             time_for_each_old = pickle.load(open(join('../time_old', f),'rb'))
             timetuple_full = pickle.load(open(join('../time_all', f), 'rb'))
@@ -611,13 +611,13 @@ if __name__ == "__main__":
     #measure_time_n_v2(3, 50, 4, False) #4-path
     #plot(1, 0, 0) # any-k property.
 
-    #n = 5
-    #measure_time_l(n)
+    n = 10
+    measure_time_l(n)
     #plot(2, n, 0) # l-scalability
 
-    l = 4
+    #l = 4
     #measure_time_n(l)
-    plot(3, 0, l)  # n-scalability
+    #plot(3, 0, l)  # n-scalability
 
 
 
