@@ -21,7 +21,7 @@ def sanitize_times(time_for_each, t_preprocess):
 
 ## Fixed
 max_id = 100
-l = 5
+l = 3
 k_limit = sys.maxsize
 
 ## Input relations
@@ -30,7 +30,7 @@ rel2tuple, tuple2weight = data_loader.load_twitter("../Experiment_Twitter/", "Tw
 
 ## Preprocess
 t_start = timeit.default_timer()
-_, tu2down_neis, tu2up_neis = CQ.cycle_SJ_reduce_l(rel2tuple, l)
+tu2down_neis, tu2up_neis = CQ.cycle_SJ_reduce_l_light(rel2tuple, l)
 t_end = timeit.default_timer()
 t_preprocess = t_end - t_start
 print "Done with preprocessing  at " + str(t_preprocess) + " sec"
@@ -51,9 +51,9 @@ print "Done with batch ranking"
 
 ## Run anyk-max unbounded
 '''
-data_structure_list = ["PQ", "Btree"]
+data_structure_list = ["Heap", "Btree"]
 for ds in data_structure_list:
-    TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k_limit, l, Deepak=False, RLmode= "PQ", bound = None, debug = False)
+    TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k_limit, l, Deepak=False, PQmode= "Heap", bound = None, debug = False)
     times = sanitize_times(time_for_each, t_preprocess)
     f = open("outs/anyk_max_" + ds + "_unbounded.out", "w")
     for i in range(len(times)):
@@ -63,9 +63,9 @@ for ds in data_structure_list:
 '''
 
 ## Run anyk-sort unbounded
-data_structure_list = ["PQ", "Btree"]
+data_structure_list = ["Heap", "Btree"]
 for ds in data_structure_list:
-    TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k_limit, l, Deepak=True, RLmode= "PQ", bound = None, debug = False)
+    TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k_limit, l, Deepak=True, PQmode= ds, bound = None, debug = False)
     times = sanitize_times(time_for_each, t_preprocess)
     f = open("outs/anyk_sort_" + ds + "_unbounded.out", "w")
     for i in range(len(times)):

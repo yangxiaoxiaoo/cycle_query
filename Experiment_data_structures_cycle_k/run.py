@@ -51,9 +51,9 @@ num_of_results = len(sorted_values)
 print "Done with batch ranking"
 
 ## Run anyk-max unbounded
-data_structure_list = ["PQ", "Btree", "Treap"]
+data_structure_list = ["Heap", "Btree", "Treap"]
 for ds in data_structure_list:
-    TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k_limit, l, Deepak=False, RLmode= ds, bound = None, debug = False)
+    TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k_limit, l, Deepak=False, PQmode= ds, bound = None, debug = False)
     times = sanitize_times(time_for_each, t_preprocess)
     f = open("outs/anyk_max_" + ds + "_unbounded.out", "w")
     for i in range(len(times)):
@@ -62,9 +62,9 @@ for ds in data_structure_list:
     print "Done with anyk_max_" + ds + "_unbounded"
 
 ## Run anyk-sort unbounded
-data_structure_list = ["PQ", "Btree", "Treap"]
+data_structure_list = ["Heap", "Btree", "Treap"]
 for ds in data_structure_list:
-    TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k_limit, l, Deepak=True, RLmode= ds, bound = None, debug = False)
+    TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k_limit, l, Deepak=True, PQmode= ds, bound = None, debug = False)
     times = sanitize_times(time_for_each, t_preprocess)
     f = open("outs/anyk_sort_" + ds + "_unbounded.out", "w")
     for i in range(len(times)):
@@ -81,7 +81,7 @@ for ds in data_structure_list:
     times = []
     for k in k_list:
         t1 = timeit.default_timer()
-        TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=False, RLmode= ds, bound = k, debug = False)
+        TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=False, PQmode= ds, bound = k, debug = False)
         t2 = timeit.default_timer()
         times.append(t2 - t1 + t_preprocess)
     f = open("outs/anyk_max_" + ds + "_bounded.out", "w")
@@ -96,7 +96,7 @@ for ds in data_structure_list:
     times = []
     for k in k_list:
         t1 = timeit.default_timer()
-        TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, RLmode= ds, bound = k, debug = False)
+        TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, PQmode= ds, bound = k, debug = False)
         t2 = timeit.default_timer()
         times.append(t2 - t1 + t_preprocess)
     f = open("outs/anyk_sort_" + ds + "_bounded.out", "w")

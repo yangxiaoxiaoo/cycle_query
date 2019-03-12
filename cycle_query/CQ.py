@@ -1,26 +1,28 @@
 import math
 import random
-import ranked_list
+import priority_queue
 import globalclass
 import copy
 import timeit
 import semi_join_utils
 import sys
 
-def initialize_ranked_list(RLmode, bound):
+def initialize_priority_queue(PQmode, bound):
     if bound is None:
-        if RLmode == "PQ": return ranked_list.ranked_list_pq()
-        elif RLmode == "Btree": return ranked_list.ranked_list_btree()
-        elif RLmode == "Treap": return ranked_list.ranked_list_treap()
+        if PQmode == "Heap": return priority_queue.priority_queue_heap()
+        elif PQmode == "Btree": return priority_queue.priority_queue_btree()
+        elif PQmode == "Treap": return priority_queue.priority_queue_treap()
+        elif PQmode == "FibHeap": return priority_queue.priority_queue_treap()
         else:
-            print "RL data structure not supported!"
+            print "PQ data structure not supported!"
             sys.exit(1)
     else:
-        if RLmode == "PQ": return ranked_list.ranked_list_pq(bound)
-        elif RLmode == "Btree": return ranked_list.ranked_list_btree(bound)
-        elif RLmode == "Treap": return ranked_list.ranked_list_treap(bound)
+        if PQmode == "Heap": return priority_queue.priority_queue_heap(bound)
+        elif PQmode == "Btree": return priority_queue.priority_queue_btree(bound)
+        elif PQmode == "Treap": return priority_queue.priority_queue_treap(bound)
+        elif PQmode == "FibHeap": return priority_queue.priority_queue_treap(bound)
         else:
-            print "RL data structure not supported!"
+            print "PQ data structure not supported!"
             sys.exit(1)        
 
 def path_SJ_reduce_l_old(rel2tuple, l):
@@ -123,15 +125,15 @@ def cycle_SJ_reduce_l_light(rel2tuple, l):
 def priority_search_l_cycle_naive(K, rel2tuple, tuple2weight, tu2down_neis, l):
 
     TOP_K = []
-    RL = initialize_ranked_list()
+    PQ = initialize_priority_queue()
     tuple2rem = heuristic_build_l_cycle(tuple2weight, rel2tuple, tu2down_neis, l)
     for tu in rel2tuple['R0']:
         if (tu, tu[0]) in tuple2rem:
-            RL.add((globalclass.PEI_cycle(tu, tuple2weight[tu], tuple2rem[(tu, tu[0])], l),))
+            PQ.add((globalclass.PEI_cycle(tu, tuple2weight[tu], tuple2rem[(tu, tu[0])], l),))
 
-    while RL.size() != 0:
-        (cur_PEI_cycle,) = RL.pop_min()
-        ## Decrease RL size???
+    while PQ.size() != 0:
+        (cur_PEI_cycle,) = PQ.pop_min()
+        ## Decrease PQ size???
         if cur_PEI_cycle.instance.completion:
             TOP_K.append(cur_PEI_cycle)
             if len(TOP_K) == K:
@@ -142,7 +144,7 @@ def priority_search_l_cycle_naive(K, rel2tuple, tuple2weight, tu2down_neis, l):
                 if cur_PEI_cycle.mergable(neighbor, tuple2rem):
                     new_PEI = copy.deepcopy(cur_PEI_cycle)
                     new_PEI.merge(neighbor, tuple2weight, tuple2rem)
-                    RL.add((new_PEI,))
+                    PQ.add((new_PEI,))
 
         else:  # length == l, check breakpoint
             frontier = cur_PEI_cycle.instance.frontier()
@@ -150,18 +152,18 @@ def priority_search_l_cycle_naive(K, rel2tuple, tuple2weight, tu2down_neis, l):
                 if neighbor[1] == cur_PEI_cycle.breakpoint:
                     new_PEI = copy.deepcopy(cur_PEI_cycle)
                     new_PEI.merge(neighbor, tuple2weight, tuple2rem)
-                    RL.add((new_PEI,))
+                    PQ.add((new_PEI,))
     print "TOP K results are"
     for PEI_cycle in TOP_K:
         print PEI_cycle.wgt
-    assert len(TOP_K) == K or RL.size() == 0
+    assert len(TOP_K) == K or PQ.size() == 0
     return TOP_K
 '''
 
 
-def priority_search_l_cycle_naive_init(rel2tuple, tuple2weight, bp_set, bptu2down_neis, l, Deepak, RLmode, bound):
+def priority_search_l_cycle_naive_init(rel2tuple, tuple2weight, bp_set, bptu2down_neis, l, Deepak, PQmode, bound):
     #used by a global PQ_global.
-    RL = initialize_ranked_list(RLmode, bound)
+    PQ = initialize_priority_queue(PQmode, bound)
     tuple2rem = heuristic_build_l_cycle(tuple2weight, rel2tuple, bp_set,bptu2down_neis, l)
 
     if Deepak:
@@ -171,30 +173,30 @@ def priority_search_l_cycle_naive_init(rel2tuple, tuple2weight, bp_set, bptu2dow
             if k[0] == 0:
                 tu = prev2sortedmap[k]['#']  # first
                 if (tu, tu[0]) in tuple2rem:
-                    RL.add((globalclass.PEI_cycle(tu, tuple2weight[tu], tuple2rem[(tu, tu[0])], l),))
-        return prev2sortedmap, tuple2rem, RL
+                    PQ.add((globalclass.PEI_cycle(tu, tuple2weight[tu], tuple2rem[(tu, tu[0])], l),))
+        return prev2sortedmap, tuple2rem, PQ
 
     else:
         for tu in rel2tuple['R0']:
             if (tu, tu[0]) in tuple2rem:
-                RL.add((globalclass.PEI_cycle(tu, tuple2weight[tu], tuple2rem[(tu, tu[0])], l),))
-        return tuple2rem, RL
+                PQ.add((globalclass.PEI_cycle(tu, tuple2weight[tu], tuple2rem[(tu, tu[0])], l),))
+        return tuple2rem, PQ
 
-def priority_search_l_cycle_naive_next(tuple2weight, bptu2down_neis, l, RL, tuple2rem, prev2sortedmap, Deepak):
+def priority_search_l_cycle_naive_next(tuple2weight, bptu2down_neis, l, PQ, tuple2rem, prev2sortedmap, Deepak):
     #used by a gobal PQ_global.
     #takes a PQ for this sub-database, return the next
     #PQ pass by ref, can be changed.
 
-    while RL.size() != 0:
-        (cur_PEI_cycle,) = RL.pop_min()
+    while PQ.size() != 0:
+        (cur_PEI_cycle,) = PQ.pop_min()
 
         if Deepak:
-            ## Decrease RL's maximum size (works for any-k sort)
-            #RL.decrease_max_size()
+            ## Decrease PQ's maximum size (works for any-k sort)
+            #PQ.decrease_max_size()
 
             successor_PEI_cycle = cur_PEI_cycle.successor(prev2sortedmap, tuple2weight, tuple2rem)
             if successor_PEI_cycle is not None:
-                RL.add((successor_PEI_cycle,))
+                PQ.add((successor_PEI_cycle,))
                 assert successor_PEI_cycle > cur_PEI_cycle
             while not cur_PEI_cycle.instance.completion:
                 #print cur_PEI_cycle.instance.length
@@ -205,7 +207,7 @@ def priority_search_l_cycle_naive_next(tuple2weight, bptu2down_neis, l, RL, tupl
                 #print cur_PEI_cycle.instance.length
                 successor_PEI_cycle = cur_PEI_cycle.successor(prev2sortedmap, tuple2weight, tuple2rem)
                 if successor_PEI_cycle is not None:
-                    RL.add((successor_PEI_cycle,))
+                    PQ.add((successor_PEI_cycle,))
                     assert successor_PEI_cycle > cur_PEI_cycle
 
             assert cur_PEI_cycle.instance.completion
@@ -224,7 +226,7 @@ def priority_search_l_cycle_naive_next(tuple2weight, bptu2down_neis, l, RL, tupl
                     if cur_PEI_cycle.mergable(neighbor, tuple2rem):
                         new_PEI = copy.deepcopy(cur_PEI_cycle)
                         new_PEI.merge(neighbor, tuple2weight, tuple2rem)
-                        RL.add((new_PEI,))
+                        PQ.add((new_PEI,))
 
             else:  # length == l, check breakpoint
                 frontier = cur_PEI_cycle.instance.frontier()
@@ -235,7 +237,7 @@ def priority_search_l_cycle_naive_next(tuple2weight, bptu2down_neis, l, RL, tupl
                     if neighbor[1] == cur_PEI_cycle.breakpoint:
                         new_PEI = copy.deepcopy(cur_PEI_cycle)
                         new_PEI.merge(neighbor, tuple2weight, tuple2rem)
-                        RL.add((new_PEI,))
+                        PQ.add((new_PEI,))
 
 
 
@@ -263,11 +265,11 @@ def simple_join(rel2tuple, tuple2weight, tu2down_neis, start, end):
     return list2wgt
 
 
-def priority_search_l_cycle_light_init(rel2tuple, tuple2weight, tu2down_neis, l, Deepak, RLmode, bound):
+def priority_search_l_cycle_light_init(rel2tuple, tuple2weight, tu2down_neis, l, Deepak, PQmode, bound):
     #print rel2tuple
     # compute a set of I1_list, a set of I2_list
     # for each I1_list, the max I2_list weight for it, a list of all matching I2_list
-    RL = initialize_ranked_list(RLmode, bound)
+    PQ = initialize_priority_queue(PQmode, bound)
 
     # simple join l/2 first relations
     # to get a set of I1_list to wgt:
@@ -290,12 +292,12 @@ def priority_search_l_cycle_light_init(rel2tuple, tuple2weight, tu2down_neis, l,
         if cur_breakpoints in breakpoints2I2:
             curPEI = globalclass.PEI_lightcycle(I1_list[0], 0, 0, l)
             curPEI.biginit(I1_list, I1_list2wgt[I1_list], breakpoints2hrtc[cur_breakpoints], l)
-            RL.add((curPEI,))
+            PQ.add((curPEI,))
     # print breakpoints2I2
     # print PQ
     if not Deepak:
         bp2sortedmap = dict()
-        return bp2sortedmap, breakpoints2I2, I2_list2wgt, RL
+        return bp2sortedmap, breakpoints2I2, I2_list2wgt, PQ
     else:
         key2list = dict()
         bp2sortedmap = dict()
@@ -312,16 +314,16 @@ def priority_search_l_cycle_light_init(rel2tuple, tuple2weight, tu2down_neis, l,
                 for i in range(len(list) - 1):
                     localdict[list[i][1]] = list[i + 1][1]
             bp2sortedmap[k] = localdict
-        return bp2sortedmap, breakpoints2I2, I2_list2wgt, RL
+        return bp2sortedmap, breakpoints2I2, I2_list2wgt, PQ
 
 
 
-def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, RL, bp2sortedmap, Deepak):
-    while RL.size() != 0:
-        (cur_PEI_cycle,) = RL.pop_min()
+def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, PQ, bp2sortedmap, Deepak):
+    while PQ.size() != 0:
+        (cur_PEI_cycle,) = PQ.pop_min()
         if Deepak:
-            ## Decrease RL's maximum size (works for any-k sort)
-            #RL.decrease_max_size()
+            ## Decrease PQ's maximum size (works for any-k sort)
+            #PQ.decrease_max_size()
 
             #successor_PEI_cycle = cur_PEI_cycle.bigsucc(breakpoints2I2, I2_list2wgt, bp2sortedmap)
             #if successor_PEI_cycle != None:
@@ -329,7 +331,7 @@ def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, RL, bp2sorte
             if cur_PEI_cycle.instance.completion:
                 successor_PEI_cycle = cur_PEI_cycle.bigsucc(breakpoints2I2, I2_list2wgt, bp2sortedmap)
                 if successor_PEI_cycle is not None:
-                    RL.add((successor_PEI_cycle,))
+                    PQ.add((successor_PEI_cycle,))
                 return cur_PEI_cycle
             cur_PEI_cycle.bigexpand(breakpoints2I2, I2_list2wgt, bp2sortedmap)
             if not cur_PEI_cycle:
@@ -337,7 +339,7 @@ def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, RL, bp2sorte
             assert cur_PEI_cycle.instance.completion
             successor_PEI_cycle = cur_PEI_cycle.bigsucc(breakpoints2I2, I2_list2wgt, bp2sortedmap)
             if successor_PEI_cycle is not None:
-                RL.add((successor_PEI_cycle,))
+                PQ.add((successor_PEI_cycle,))
             return cur_PEI_cycle
 
         else:
@@ -347,7 +349,7 @@ def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, RL, bp2sorte
                 for I2_list in breakpoints2I2[cur_PEI_cycle.breakpointpair]:
                     new_PEI = copy.deepcopy(cur_PEI_cycle)
                     new_PEI.bigmerge(I2_list, I2_list2wgt[tuple(I2_list)])
-                    RL.add((new_PEI,))
+                    PQ.add((new_PEI,))
 
 
 
@@ -491,7 +493,7 @@ def Deepak_sort_path(tuple2rem, tuple2weight, rel2tuple, l):
     return res
 
 
-def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak, RLmode, bound, debug):
+def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak, PQmode, bound, debug):
 
     #Deepak = True: only push sorted successors.
     if debug:
@@ -501,7 +503,7 @@ def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak, 
     TOP_K = []
     time_for_each = []
     start_time = timeit.default_timer()
-    RL = initialize_ranked_list(RLmode, bound)
+    PQ = initialize_priority_queue(PQmode, bound)
     tuple2rem = heuristic_build_l_path(tuple2weight, rel2tuple, tu2down_neis, l)
 
     if Deepak:  #push only "null pointed first heads"
@@ -510,34 +512,34 @@ def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak, 
         for k in prev2sortedmap:
             if k[0] == 0:
                 tu = prev2sortedmap[k]['#'] # first
-                RL.add((globalclass.PEI_path(tu, tuple2weight[tu], tuple2rem[tu], l),))
+                PQ.add((globalclass.PEI_path(tu, tuple2weight[tu], tuple2rem[tu], l),))
 
     else:
         for tu in rel2tuple['R0']:
             if tu in tuple2rem:
-                RL.add((globalclass.PEI_path(tu, tuple2weight[tu], tuple2rem[tu], l),))
+                PQ.add((globalclass.PEI_path(tu, tuple2weight[tu], tuple2rem[tu], l),))
 
-    while RL.size() != 0:
-        (cur_PEI_path,) = RL.pop_min()
+    while PQ.size() != 0:
+        (cur_PEI_path,) = PQ.pop_min()
 
         if Deepak:
             successor_PEI_path = cur_PEI_path.successor(prev2sortedmap, tuple2weight, tuple2rem)
 
             if successor_PEI_path is not None:
                 assert cur_PEI_path < successor_PEI_path
-                RL.add((successor_PEI_path,))
+                PQ.add((successor_PEI_path,))
 
             while not cur_PEI_path.instance.completion:
                 cur_PEI_path.expand(prev2sortedmap, tuple2weight, tuple2rem)
                 successor_PEI_path = cur_PEI_path.successor(prev2sortedmap, tuple2weight, tuple2rem)
                 if successor_PEI_path is not None:
                     assert cur_PEI_path < successor_PEI_path
-                    RL.add((successor_PEI_path,))
+                    PQ.add((successor_PEI_path,))
             if debug:
                 assert  cur_PEI_path.instance.completion
             TOP_K.append(cur_PEI_path)
-            ## Decrease RL's maximum size (works only for any-k sort for now)
-            RL.decrease_max_size()
+            ## Decrease PQ's maximum size (works only for any-k sort for now)
+            PQ.decrease_max_size()
 
             end_time = timeit.default_timer()
             time_for_each.append(end_time - start_time)
@@ -549,8 +551,8 @@ def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak, 
         else:  # push all into PQ
             if cur_PEI_path.instance.completion:
                 TOP_K.append(cur_PEI_path)
-                ## Decrease RL's maximum size (works only for any-k sort for now)
-                RL.decrease_max_size()
+                ## Decrease PQ's maximum size (works only for any-k sort for now)
+                PQ.decrease_max_size()
                 end_time = timeit.default_timer()
                 time_for_each.append(end_time - start_time)
                 start_time = end_time
@@ -563,19 +565,19 @@ def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak, 
                         if cur_PEI_path.mergable(neighbor, tuple2rem):
                             new_PEI_path = copy.deepcopy(cur_PEI_path)
                             new_PEI_path.merge(neighbor, tuple2weight, tuple2rem)
-                            RL.add((new_PEI_path,))
+                            PQ.add((new_PEI_path,))
 
                 else:  # length == l-1, last growth.
                     frontier = cur_PEI_path.instance.frontier()
                     for neighbor in tu2down_neis[frontier]:
                         new_PEI_path = copy.deepcopy(cur_PEI_path)
                         new_PEI_path.merge(neighbor, tuple2weight, tuple2rem)
-                        RL.add((new_PEI_path,))
+                        PQ.add((new_PEI_path,))
     if debug:
         print "TOP K results are"
         for PEI_path in TOP_K:
             print PEI_path.wgt
-        assert len(TOP_K) == K or RL.size() == 0
+        assert len(TOP_K) == K or PQ.size() == 0
     return TOP_K, time_for_each
 
 def cycle_rotate(relation2tuple, pos, l):
@@ -657,16 +659,16 @@ def path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis,k, l, debug):
             print sorted_weight[i]
     return sorted_weight
 
-def l_path_sim(l, k, RLmode, bound):
+def l_path_sim(l, k, PQmode, bound):
     # simple simulation on l_simple path. Tested and can be referred to in experiments.
     attr_card = [3, 2, 3, 4, 5]
     var2cand = semi_join_utils.build_data(l, attr_card)
     rel2tuple, tuple2weight = semi_join_utils.build_relation(l, var2cand, weightrange=10)
     tu2down_neis, tu2up_neis = path_SJ_reduce_l(rel2tuple, l)
     print "algo: any-k priotitized search WWW"
-    TOP_K_max, time_for_each = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, False, RLmode, bound, debug=True)
+    TOP_K_max, time_for_each = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, False, PQmode, bound, debug=True)
     print "algo: any-k priotitized search Deepak"
-    TOP_K_sort, time_for_each = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, True, RLmode, bound, debug=True)
+    TOP_K_sort, time_for_each = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, True, PQmode, bound, debug=True)
     # assert TOP_K_PQ2 == TOP_K_PQ1 -- observed only rounding numerical errors, ignore.
     print "algo: enumerate all"
     path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis, k, l, debug=True)
@@ -869,11 +871,11 @@ def l_cycle_naive(l, k):
         assert TOP_K_PQ == TOP_K_PQ2
 '''
 
-def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmode, bound, debug):
+def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, PQmode, bound, debug):
     time_start = timeit.default_timer()
 
     partitions = l_cycle_database_partition(rel2tuple, l)
-    small_RL_list = []
+    small_PQ_list = []
     tuple2rem_list = []
     tu2down_neis_list = []
     tu2up_neis_list = []
@@ -894,29 +896,29 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmod
         tu2up_neis_list.append(bptu2up_neis)
 
         if Deepak:
-            prev2sortedmap, tuple2rem, RL = priority_search_l_cycle_naive_init(rotated_subdatabase, tuple2weight, bp_set, bptu2down_neis, l, Deepak, RLmode, bound)
+            prev2sortedmap, tuple2rem, PQ = priority_search_l_cycle_naive_init(rotated_subdatabase, tuple2weight, bp_set, bptu2down_neis, l, Deepak, PQmode, bound)
             if debug:
                 assert type(prev2sortedmap) == dict
             prev2sortedmaps.append(prev2sortedmap)
         else:
-            tuple2rem, RL = priority_search_l_cycle_naive_init(rotated_subdatabase, tuple2weight, bp_set, bptu2down_neis, l, Deepak, RLmode, bound)
-        small_RL_list.append(RL)  # small_RL_list[i] is i-th partition's local PQ.
+            tuple2rem, PQ = priority_search_l_cycle_naive_init(rotated_subdatabase, tuple2weight, bp_set, bptu2down_neis, l, Deepak, PQmode, bound)
+        small_PQ_list.append(PQ)  # small_PQ_list[i] is i-th partition's local PQ.
         tuple2rem_list.append(tuple2rem)  # this is different for subdatabases, need to keep.
 
     # all light case
     tu2down_neis, tu2up_neis = cycle_SJ_reduce_l_light(partitions[l], l)
-    bp2sortedmap, breakpoints2I2, I2_list2wgt, RL = priority_search_l_cycle_light_init(partitions[l], tuple2weight, tu2down_neis, l, Deepak, RLmode, bound)
-    small_RL_list.append(RL)
+    bp2sortedmap, breakpoints2I2, I2_list2wgt, PQ = priority_search_l_cycle_light_init(partitions[l], tuple2weight, tu2down_neis, l, Deepak, PQmode, bound)
+    small_PQ_list.append(PQ)
 
     # start global search
     head_values = []
 
-    for i in range(len(small_RL_list)):
-        RL = small_RL_list[i]
-        if RL.size() == 0:
+    for i in range(len(small_PQ_list)):
+        PQ = small_PQ_list[i]
+        if PQ.size() == 0:
             head_values.append(99999999)  # mark that empty PQ as infinate large head value, since we look for lightest
         else:
-            top_PEI = RL.min_weight()  # peek at top result
+            top_PEI = PQ.min_weight()  # peek at top result
             if debug:
                 assert isinstance(top_PEI, globalclass.PEI_cycle)
             cur_value = top_PEI.wgt + top_PEI.hrtc
@@ -938,7 +940,7 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmod
             if Deepak:
                 prev2sortedmap = prev2sortedmaps[top_pos]
             next_result = priority_search_l_cycle_naive_next \
-                (tuple2weight, tu2down_neis_list[top_pos], l, small_RL_list[top_pos], tuple2rem_list[top_pos], prev2sortedmap, Deepak)
+                (tuple2weight, tu2down_neis_list[top_pos], l, small_PQ_list[top_pos], tuple2rem_list[top_pos], prev2sortedmap, Deepak)
             #if len(TOP_K)!= 0 and next_result.wgt == TOP_K[-1].wgt:
             #    print next_result.instance.R_list
             #    print TOP_K[-1].instance.R_list
@@ -946,7 +948,7 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmod
 
         else:  # all light partition
 
-            next_result = priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, small_RL_list[l], bp2sortedmap, Deepak)
+            next_result = priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, small_PQ_list[l], bp2sortedmap, Deepak)
             if not next_result:
                 head_values[top_pos] = 99999999
             elif isinstance(next_result, globalclass.PEI_lightcycle) and (len(TOP_K)== 0 or len(TOP_K)!= 0):# and next_result.instance.R_list != TOP_K[-1].instance.R_list):  # when there is no next, maybe nontype.
@@ -962,9 +964,9 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmod
             head_values[top_pos] = 99999999
         elif len(TOP_K)== 0 or next_result.instance.R_list != TOP_K[-1].instance.R_list:
             TOP_K.append(next_result)
-            ## Decrease the size of all RLs
-            for small_RL in small_RL_list:    
-                small_RL.decrease_max_size()    
+            ## Decrease the size of all PQs
+            for small_PQ in small_PQ_list:    
+                small_PQ.decrease_max_size()    
  
             time_end = timeit.default_timer()
             time_for_each.append(time_end - time_start)
@@ -973,8 +975,8 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmod
             head_values[top_pos] = 99999999
 
         # update the best value of this small PQ, if there is still some in there.
-        if small_RL_list[top_pos].size() != 0:
-            new_top_PEI = small_RL_list[top_pos].min_weight()   # peek
+        if small_PQ_list[top_pos].size() != 0:
+            new_top_PEI = small_PQ_list[top_pos].min_weight()   # peek
             cur_value = new_top_PEI.wgt + new_top_PEI.hrtc
             head_values[top_pos] = cur_value
         else:  # this PQ is done.
@@ -986,8 +988,8 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmod
 
         # terminate when all small PQs are empty
         all_empty = True
-        for small_RL in small_RL_list:
-            if small_RL.size() != 0:
+        for small_PQ in small_PQ_list:
+            if small_PQ.size() != 0:
                 all_empty = False
         if all_empty:
             break
@@ -998,7 +1000,7 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, RLmod
     return TOP_K, time_for_each
 
 
-def l_cycle_split(l, k, test, RLmode, bound):
+def l_cycle_split(l, k, test, PQmode, bound):
     attr_card = [2, 2, 2, 2, 2]
     var2cand = semi_join_utils.build_data(l, attr_card)
     rel2tuple, tuple2weight = semi_join_utils.build_relation(l, var2cand, weightrange=10)
@@ -1012,13 +1014,13 @@ def l_cycle_split(l, k, test, RLmode, bound):
         cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis4, tu2down_neis4, k, l, False, debug=True)
 
     print "previous cycles"
-    TOP_K_max, time_for_each_max = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, False, RLmode, bound, debug=True)
+    TOP_K_max, time_for_each_max = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, False, PQmode, bound, debug=True)
     print "TOP K results are"
     for PEI in TOP_K_max:
         print PEI.wgt
 
     print "Deepak improved cycles"
-    TOP_K_sort, time_for_each_sort = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, True, RLmode, bound, debug=True)
+    TOP_K_sort, time_for_each_sort = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, True, PQmode, bound, debug=True)
     print "TOP K results are"
     for PEI in TOP_K_sort:
         print PEI.wgt
@@ -1040,15 +1042,15 @@ def test_correctness():
     while True:
         l_cycle_split(5, 3, test=True)
 
-def run_path_example(n, l, k, RLmode, bound):
+def run_path_example(n, l, k, PQmode, bound):
     import DataGenerator
 
     rel2tuple, tuple2weight = DataGenerator.getDatabase("Path", n, l, "Full", "HardCase", 2)
     tu2down_neis, tu2up_neis = path_SJ_reduce_l(rel2tuple, l)
     print "PATH algo: any-k sort"
-    TOP_K_sort, time_for_each_sort = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= True, RLmode = RLmode, bound = bound, debug = True)
+    TOP_K_sort, time_for_each_sort = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= True, PQmode = PQmode, bound = bound, debug = True)
     print "PATH algo: any-k max"
-    TOP_K_max, time_for_each_max = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= False, RLmode = RLmode, bound = bound, debug = True)
+    TOP_K_max, time_for_each_max = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= False, PQmode = PQmode, bound = bound, debug = True)
     print "PATH algo: enumerate all"
     sorted_values = path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis, k, l, debug = True)
 
@@ -1066,17 +1068,17 @@ def run_path_example(n, l, k, RLmode, bound):
         if format(TOP_K_max[i].wgt, '.4f') != format(sorted_values[i], '.4f'):
             print "== Error (Path)!!! " + str(TOP_K_max[i].wgt) + " different than " + str(sorted_values[i])
 
-def run_cycle_example(n, l, k, RLmode, bound):
+def run_cycle_example(n, l, k, PQmode, bound):
     import DataGenerator
 
     rel2tuple, tuple2weight = DataGenerator.getDatabase("Cycle", n, l, "Full", "HardCase", 2)
     tu2down_neis, tu2up_neis = cycle_SJ_reduce_l_light(rel2tuple, l)
     print "Cycle algo: any-k sort"
-    TOP_K_sort, time_for_each_sort = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, RLmode= RLmode, bound = bound, debug = True)
+    TOP_K_sort, time_for_each_sort = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, PQmode= PQmode, bound = bound, debug = True)
     for PEI in TOP_K_sort:
         print PEI.wgt
     print "Cycle algo: any-k max"
-    TOP_K_max, time_for_each_max = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=False, RLmode=RLmode, bound=bound, debug=True)
+    TOP_K_max, time_for_each_max = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=False, PQmode=PQmode, bound=bound, debug=True)
     for PEI in TOP_K_max:
         print PEI.wgt
     print "Cycle algo: enumerate all"
@@ -1101,15 +1103,15 @@ def run_cycle_example(n, l, k, RLmode, bound):
             print "== Error (Cycle)!!! " + str(TOP_K_max[i].wgt) + " different than " + str(sorted_values[i])
 
 if __name__ == "__main__":
-    l_path_sim(4, 5, RLmode="PQ", bound=5)
+    l_path_sim(4, 5, PQmode="Heap", bound=5)
     #l_cycle_naive(5, 3)
-    #l_cycle_split(3, 5, test=False, RLmode="PQ", bound=3)
+    #l_cycle_split(3, 5, test=False, PQmode="Heap", bound=3)
 
     #test_correctness()
     #while(True):
-    run_path_example(n=50, l=5, k=5, RLmode="PQ", bound=None)
+    run_path_example(n=50, l=5, k=5, PQmode="FibHeap", bound=None)
     while True:
-        run_cycle_example(n=50, l=3, k=5, RLmode="PQ", bound=None)
+        run_cycle_example(n=50, l=3, k=5, PQmode="FibHeap", bound=None)
 
 
 
