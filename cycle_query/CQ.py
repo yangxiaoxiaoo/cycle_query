@@ -12,7 +12,7 @@ def initialize_priority_queue(PQmode, bound):
         if PQmode == "Heap": return priority_queue.priority_queue_heap()
         elif PQmode == "Btree": return priority_queue.priority_queue_btree()
         elif PQmode == "Treap": return priority_queue.priority_queue_treap()
-        elif PQmode == "FibHeap": return priority_queue.priority_queue_treap()
+        elif PQmode == "FibHeap": return priority_queue.priority_queue_FibHeap()
         else:
             print "PQ data structure not supported!"
             sys.exit(1)
@@ -20,7 +20,7 @@ def initialize_priority_queue(PQmode, bound):
         if PQmode == "Heap": return priority_queue.priority_queue_heap(bound)
         elif PQmode == "Btree": return priority_queue.priority_queue_btree(bound)
         elif PQmode == "Treap": return priority_queue.priority_queue_treap(bound)
-        elif PQmode == "FibHeap": return priority_queue.priority_queue_treap(bound)
+        elif PQmode == "FibHeap": return priority_queue.priority_queue_FibHeap(bound)
         else:
             print "PQ data structure not supported!"
             sys.exit(1)        
@@ -129,10 +129,10 @@ def priority_search_l_cycle_naive(K, rel2tuple, tuple2weight, tu2down_neis, l):
     tuple2rem = heuristic_build_l_cycle(tuple2weight, rel2tuple, tu2down_neis, l)
     for tu in rel2tuple['R0']:
         if (tu, tu[0]) in tuple2rem:
-            PQ.add((globalclass.PEI_cycle(tu, tuple2weight[tu], tuple2rem[(tu, tu[0])], l),))
+            PQ.add((globalclass.PEI_cycle(tu, tuple2weight[tu], tuple2rem[(tu, tu[0])], l), None))
 
     while PQ.size() != 0:
-        (cur_PEI_cycle,) = PQ.pop_min()
+        (cur_PEI_cycle, _) = PQ.pop_min()
         ## Decrease PQ size???
         if cur_PEI_cycle.instance.completion:
             TOP_K.append(cur_PEI_cycle)
@@ -144,7 +144,7 @@ def priority_search_l_cycle_naive(K, rel2tuple, tuple2weight, tu2down_neis, l):
                 if cur_PEI_cycle.mergable(neighbor, tuple2rem):
                     new_PEI = copy.deepcopy(cur_PEI_cycle)
                     new_PEI.merge(neighbor, tuple2weight, tuple2rem)
-                    PQ.add((new_PEI,))
+                    PQ.add((new_PEI, None))
 
         else:  # length == l, check breakpoint
             frontier = cur_PEI_cycle.instance.frontier()
@@ -152,7 +152,7 @@ def priority_search_l_cycle_naive(K, rel2tuple, tuple2weight, tu2down_neis, l):
                 if neighbor[1] == cur_PEI_cycle.breakpoint:
                     new_PEI = copy.deepcopy(cur_PEI_cycle)
                     new_PEI.merge(neighbor, tuple2weight, tuple2rem)
-                    PQ.add((new_PEI,))
+                    PQ.add((new_PEI, None))
     print "TOP K results are"
     for PEI_cycle in TOP_K:
         print PEI_cycle.wgt
@@ -173,13 +173,13 @@ def priority_search_l_cycle_naive_init(rel2tuple, tuple2weight, bp_set, bptu2dow
             if k[0] == 0:
                 tu = prev2sortedmap[k]['#']  # first
                 if (tu, tu[0]) in tuple2rem:
-                    PQ.add((globalclass.PEI_cycle(tu, tuple2weight[tu], tuple2rem[(tu, tu[0])], l),))
+                    PQ.add((globalclass.PEI_cycle(tu, tuple2weight[tu], tuple2rem[(tu, tu[0])], l), None))
         return prev2sortedmap, tuple2rem, PQ
 
     else:
         for tu in rel2tuple['R0']:
             if (tu, tu[0]) in tuple2rem:
-                PQ.add((globalclass.PEI_cycle(tu, tuple2weight[tu], tuple2rem[(tu, tu[0])], l),))
+                PQ.add((globalclass.PEI_cycle(tu, tuple2weight[tu], tuple2rem[(tu, tu[0])], l), None))
         return tuple2rem, PQ
 
 def priority_search_l_cycle_naive_next(tuple2weight, bptu2down_neis, l, PQ, tuple2rem, prev2sortedmap, Deepak):
@@ -188,7 +188,7 @@ def priority_search_l_cycle_naive_next(tuple2weight, bptu2down_neis, l, PQ, tupl
     #PQ pass by ref, can be changed.
 
     while PQ.size() != 0:
-        (cur_PEI_cycle,) = PQ.pop_min()
+        (cur_PEI_cycle, _) = PQ.pop_min()
 
         if Deepak:
             ## Decrease PQ's maximum size (works for any-k sort)
@@ -196,7 +196,7 @@ def priority_search_l_cycle_naive_next(tuple2weight, bptu2down_neis, l, PQ, tupl
 
             successor_PEI_cycle = cur_PEI_cycle.successor(prev2sortedmap, tuple2weight, tuple2rem)
             if successor_PEI_cycle is not None:
-                PQ.add((successor_PEI_cycle,))
+                PQ.add((successor_PEI_cycle, None))
                 assert successor_PEI_cycle > cur_PEI_cycle
             while not cur_PEI_cycle.instance.completion:
                 #print cur_PEI_cycle.instance.length
@@ -207,7 +207,7 @@ def priority_search_l_cycle_naive_next(tuple2weight, bptu2down_neis, l, PQ, tupl
                 #print cur_PEI_cycle.instance.length
                 successor_PEI_cycle = cur_PEI_cycle.successor(prev2sortedmap, tuple2weight, tuple2rem)
                 if successor_PEI_cycle is not None:
-                    PQ.add((successor_PEI_cycle,))
+                    PQ.add((successor_PEI_cycle, None))
                     assert successor_PEI_cycle > cur_PEI_cycle
 
             assert cur_PEI_cycle.instance.completion
@@ -226,7 +226,7 @@ def priority_search_l_cycle_naive_next(tuple2weight, bptu2down_neis, l, PQ, tupl
                     if cur_PEI_cycle.mergable(neighbor, tuple2rem):
                         new_PEI = copy.deepcopy(cur_PEI_cycle)
                         new_PEI.merge(neighbor, tuple2weight, tuple2rem)
-                        PQ.add((new_PEI,))
+                        PQ.add((new_PEI, None))
 
             else:  # length == l, check breakpoint
                 frontier = cur_PEI_cycle.instance.frontier()
@@ -237,7 +237,7 @@ def priority_search_l_cycle_naive_next(tuple2weight, bptu2down_neis, l, PQ, tupl
                     if neighbor[1] == cur_PEI_cycle.breakpoint:
                         new_PEI = copy.deepcopy(cur_PEI_cycle)
                         new_PEI.merge(neighbor, tuple2weight, tuple2rem)
-                        PQ.add((new_PEI,))
+                        PQ.add((new_PEI, None))
 
 
 
@@ -292,7 +292,7 @@ def priority_search_l_cycle_light_init(rel2tuple, tuple2weight, tu2down_neis, l,
         if cur_breakpoints in breakpoints2I2:
             curPEI = globalclass.PEI_lightcycle(I1_list[0], 0, 0, l)
             curPEI.biginit(I1_list, I1_list2wgt[I1_list], breakpoints2hrtc[cur_breakpoints], l)
-            PQ.add((curPEI,))
+            PQ.add((curPEI, None))
     # print breakpoints2I2
     # print PQ
     if not Deepak:
@@ -320,7 +320,7 @@ def priority_search_l_cycle_light_init(rel2tuple, tuple2weight, tu2down_neis, l,
 
 def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, PQ, bp2sortedmap, Deepak):
     while PQ.size() != 0:
-        (cur_PEI_cycle,) = PQ.pop_min()
+        (cur_PEI_cycle, _) = PQ.pop_min()
         if Deepak:
             ## Decrease PQ's maximum size (works for any-k sort)
             #PQ.decrease_max_size()
@@ -331,7 +331,7 @@ def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, PQ, bp2sorte
             if cur_PEI_cycle.instance.completion:
                 successor_PEI_cycle = cur_PEI_cycle.bigsucc(breakpoints2I2, I2_list2wgt, bp2sortedmap)
                 if successor_PEI_cycle is not None:
-                    PQ.add((successor_PEI_cycle,))
+                    PQ.add((successor_PEI_cycle, None))
                 return cur_PEI_cycle
             cur_PEI_cycle.bigexpand(breakpoints2I2, I2_list2wgt, bp2sortedmap)
             if not cur_PEI_cycle:
@@ -339,7 +339,7 @@ def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, PQ, bp2sorte
             assert cur_PEI_cycle.instance.completion
             successor_PEI_cycle = cur_PEI_cycle.bigsucc(breakpoints2I2, I2_list2wgt, bp2sortedmap)
             if successor_PEI_cycle is not None:
-                PQ.add((successor_PEI_cycle,))
+                PQ.add((successor_PEI_cycle, None))
             return cur_PEI_cycle
 
         else:
@@ -349,7 +349,7 @@ def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, PQ, bp2sorte
                 for I2_list in breakpoints2I2[cur_PEI_cycle.breakpointpair]:
                     new_PEI = copy.deepcopy(cur_PEI_cycle)
                     new_PEI.bigmerge(I2_list, I2_list2wgt[tuple(I2_list)])
-                    PQ.add((new_PEI,))
+                    PQ.add((new_PEI, None))
 
 
 
@@ -512,29 +512,29 @@ def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak, 
         for k in prev2sortedmap:
             if k[0] == 0:
                 tu = prev2sortedmap[k]['#'] # first
-                PQ.add((globalclass.PEI_path(tu, tuple2weight[tu], tuple2rem[tu], l),))
+                PQ.add((globalclass.PEI_path(tu, tuple2weight[tu], tuple2rem[tu], l), None))
 
     else:
         for tu in rel2tuple['R0']:
             if tu in tuple2rem:
-                PQ.add((globalclass.PEI_path(tu, tuple2weight[tu], tuple2rem[tu], l),))
+                PQ.add((globalclass.PEI_path(tu, tuple2weight[tu], tuple2rem[tu], l), None))
 
     while PQ.size() != 0:
-        (cur_PEI_path,) = PQ.pop_min()
+        (cur_PEI_path, _) = PQ.pop_min()
 
         if Deepak:
             successor_PEI_path = cur_PEI_path.successor(prev2sortedmap, tuple2weight, tuple2rem)
 
             if successor_PEI_path is not None:
                 assert cur_PEI_path < successor_PEI_path
-                PQ.add((successor_PEI_path,))
+                PQ.add((successor_PEI_path, None))
 
             while not cur_PEI_path.instance.completion:
                 cur_PEI_path.expand(prev2sortedmap, tuple2weight, tuple2rem)
                 successor_PEI_path = cur_PEI_path.successor(prev2sortedmap, tuple2weight, tuple2rem)
                 if successor_PEI_path is not None:
                     assert cur_PEI_path < successor_PEI_path
-                    PQ.add((successor_PEI_path,))
+                    PQ.add((successor_PEI_path, None))
             if debug:
                 assert  cur_PEI_path.instance.completion
             TOP_K.append(cur_PEI_path)
@@ -565,14 +565,14 @@ def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak, 
                         if cur_PEI_path.mergable(neighbor, tuple2rem):
                             new_PEI_path = copy.deepcopy(cur_PEI_path)
                             new_PEI_path.merge(neighbor, tuple2weight, tuple2rem)
-                            PQ.add((new_PEI_path,))
+                            PQ.add((new_PEI_path, None))
 
                 else:  # length == l-1, last growth.
                     frontier = cur_PEI_path.instance.frontier()
                     for neighbor in tu2down_neis[frontier]:
                         new_PEI_path = copy.deepcopy(cur_PEI_path)
                         new_PEI_path.merge(neighbor, tuple2weight, tuple2rem)
-                        PQ.add((new_PEI_path,))
+                        PQ.add((new_PEI_path, None))
     if debug:
         print "TOP K results are"
         for PEI_path in TOP_K:
@@ -1109,9 +1109,9 @@ if __name__ == "__main__":
 
     #test_correctness()
     #while(True):
-    run_path_example(n=50, l=5, k=5, PQmode="FibHeap", bound=None)
-    while True:
-        run_cycle_example(n=50, l=3, k=5, PQmode="FibHeap", bound=None)
+    print "Testing Fib Heap"
+    run_path_example(n=20, l=5, k=5, PQmode="Heap", bound=None)
+    run_cycle_example(n=20, l=3, k=5, PQmode="Heap", bound=None)
 
 
 
