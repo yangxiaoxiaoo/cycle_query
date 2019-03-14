@@ -14,7 +14,29 @@ import heapq
 import treap
 import blist
 import fib_heap
+import pairing_heap
 import sys
+
+def initialize_priority_queue(PQmode, bound):
+    if bound is None:
+        if PQmode == "Heap": return priority_queue_heap()
+        elif PQmode == "Btree": return priority_queue_btree()
+        elif PQmode == "Treap": return priority_queue_treap()
+        elif PQmode == "FibHeap": return priority_queue_FibHeap()
+        elif PQmode == "PairHeap": return priority_queue_PairHeap()
+        else:
+            print "PQ data structure not supported!"
+            sys.exit(1)
+    else:
+        if PQmode == "Heap": return priority_queue_heap(bound)
+        elif PQmode == "Btree": return priority_queue_btree(bound)
+        elif PQmode == "Treap": return priority_queue_treap(bound)
+        elif PQmode == "FibHeap": return priority_queue_FibHeap(bound)
+        elif PQmode == "PairHeap": return priority_queue_PairHeap(bound)
+        else:
+            print "PQ data structure not supported!"
+            sys.exit(1)        
+
 
 class priority_queue_abstract():
 	__metaclass__ = abc.ABCMeta
@@ -127,7 +149,36 @@ class priority_queue_FibHeap(priority_queue_abstract):
 	## If the list is initialized as bounded, then the item is only stored if its weight is less than the maximum one stored
 	def add(self, item):
 		(weight, value) = item
-		tup = self.l.insert(weight, value)
+		self.l.insert(weight, value)
+		self.curr_size += 1
+
+class priority_queue_PairHeap(priority_queue_abstract):
+
+	def __init__(self, size = None):
+		if size != None:
+			print "Bounded Pairing Heap currently unsupported!"
+			sys.exit(1)
+		super(priority_queue_PairHeap, self).__init__(size)
+		self.l = pairing_heap.Heap()
+
+	## Returns the minimum weight of all items stored
+	def min_weight(self):
+		return self.l.top[0]
+
+	## Returns an item of minimum weight without removing it
+	## If the minimum weight in the queue is known, it can be passed as an argument for better performance
+	def peek_min(self, minWeight = None):
+		return self.l.top
+		
+	## Removes an item of minimum weight from the list and returns it
+	## If the minimum weight in the queue is known, it can be passed as an argument for better performance
+	def pop_min(self, minWeight = None):
+		return self.l.pop()
+
+	## Adds an item to the priority queue
+	## If the list is initialized as bounded, then the item is only stored if its weight is less than the maximum one stored
+	def add(self, item):
+		self.l.push(item)
 		self.curr_size += 1
 
 

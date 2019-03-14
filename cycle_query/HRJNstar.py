@@ -138,30 +138,10 @@ def hrjn_main(relation2tuple, tuple2weight, k, l, data_struct, bound, verify = F
 	## Initialize data structures
 	## 1. Priority queue for results, when a join result exceeds the threshold it is moved to the outBuffer
 	## Results are in the form of (weight, list) where list is a list of values from R0 to R(l-1)
-	if bound:	
-		if (data_struct == "Heap"):
-			joinResults = priority_queue.priority_queue_heap(k)
-		elif (data_struct == "Btree"):
-			joinResults = priority_queue.priority_queue_btree(k)
-		elif (data_struct == "Treap"):
-			joinResults = priority_queue.priority_queue_treap(k)
-		elif (data_struct == "FibHeap"):
-			joinResults = priority_queue.priority_queue_FibHeap(k)
-		else:
-			print "Data structure not supported!"
-			sys.exit(1)
+	if bound:
+		joinResults = priority_queue.initialize_priority_queue(data_struct, k)
 	else:
-		if (data_struct == "Heap"):
-			joinResults = priority_queue.priority_queue_heap()
-		elif (data_struct == "Btree"):
-			joinResults = priority_queue.priority_queue_btree()
-		elif (data_struct == "Treap"):
-			joinResults = priority_queue.priority_queue_treap()
-		elif (data_struct == "FibHeap"):
-			joinResults = priority_queue.priority_queue_FibHeap()
-		else:
-			print "Data structure not supported!"
-			sys.exit(1)
+		joinResults = priority_queue.initialize_priority_queue(data_struct, None)
 	outBuffer = []
 
 	## 2. Hash tables
@@ -315,7 +295,7 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Implementation of a generalized HRJN* operator for path queries')
 
 	parser.add_argument('-b', action="store_true", dest="bound", default=False, help="Bound the size of the data structure holding the results in ranked order")
-	parser.add_argument('-ds', action="store", dest="data_struct", choices={"Heap", "Btree", "Treap", "FibHeap"}, default="Heap", help="Data structure to jold ranked results")
+	parser.add_argument('-ds', action="store", dest="data_struct", default="Heap", help="Data structure to jold ranked results")
 	parser.add_argument('-k', action="store", dest="k", default=1, type=int, help="Number of top results to produce")
 	parser.add_argument('-n', action="store", dest="n", default=5, type=int, help="Maximum cardinality of relations")
 	parser.add_argument('-l', action="store", dest="length", default=4, type=int, help="Length of Path or Cycle")

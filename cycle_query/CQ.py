@@ -7,24 +7,6 @@ import timeit
 import semi_join_utils
 import sys
 
-def initialize_priority_queue(PQmode, bound):
-    if bound is None:
-        if PQmode == "Heap": return priority_queue.priority_queue_heap()
-        elif PQmode == "Btree": return priority_queue.priority_queue_btree()
-        elif PQmode == "Treap": return priority_queue.priority_queue_treap()
-        elif PQmode == "FibHeap": return priority_queue.priority_queue_FibHeap()
-        else:
-            print "PQ data structure not supported!"
-            sys.exit(1)
-    else:
-        if PQmode == "Heap": return priority_queue.priority_queue_heap(bound)
-        elif PQmode == "Btree": return priority_queue.priority_queue_btree(bound)
-        elif PQmode == "Treap": return priority_queue.priority_queue_treap(bound)
-        elif PQmode == "FibHeap": return priority_queue.priority_queue_FibHeap(bound)
-        else:
-            print "PQ data structure not supported!"
-            sys.exit(1)        
-
 def path_SJ_reduce_l_old(rel2tuple, l):
     #path semi-join bottom-up, build dictionary to connected tuples.
 
@@ -125,7 +107,7 @@ def cycle_SJ_reduce_l_light(rel2tuple, l):
 def priority_search_l_cycle_naive(K, rel2tuple, tuple2weight, tu2down_neis, l):
 
     TOP_K = []
-    PQ = initialize_priority_queue()
+    PQ = priority_queue.initialize_priority_queue()
     tuple2rem = heuristic_build_l_cycle(tuple2weight, rel2tuple, tu2down_neis, l)
     for tu in rel2tuple['R0']:
         if (tu, tu[0]) in tuple2rem:
@@ -163,7 +145,7 @@ def priority_search_l_cycle_naive(K, rel2tuple, tuple2weight, tu2down_neis, l):
 
 def priority_search_l_cycle_naive_init(rel2tuple, tuple2weight, bp_set, bptu2down_neis, l, Deepak, PQmode, bound):
     #used by a global PQ_global.
-    PQ = initialize_priority_queue(PQmode, bound)
+    PQ = priority_queue.initialize_priority_queue(PQmode, bound)
     tuple2rem = heuristic_build_l_cycle(tuple2weight, rel2tuple, bp_set,bptu2down_neis, l)
 
     if Deepak:
@@ -269,7 +251,7 @@ def priority_search_l_cycle_light_init(rel2tuple, tuple2weight, tu2down_neis, l,
     #print rel2tuple
     # compute a set of I1_list, a set of I2_list
     # for each I1_list, the max I2_list weight for it, a list of all matching I2_list
-    PQ = initialize_priority_queue(PQmode, bound)
+    PQ = priority_queue.initialize_priority_queue(PQmode, bound)
 
     # simple join l/2 first relations
     # to get a set of I1_list to wgt:
@@ -503,7 +485,7 @@ def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak, 
     TOP_K = []
     time_for_each = []
     start_time = timeit.default_timer()
-    PQ = initialize_priority_queue(PQmode, bound)
+    PQ = priority_queue.initialize_priority_queue(PQmode, bound)
     tuple2rem = heuristic_build_l_path(tuple2weight, rel2tuple, tu2down_neis, l)
 
     if Deepak:  #push only "null pointed first heads"
@@ -1109,7 +1091,6 @@ if __name__ == "__main__":
 
     #test_correctness()
     #while(True):
-    print "Testing Fib Heap"
     run_path_example(n=20, l=5, k=5, PQmode="Heap", bound=None)
     run_cycle_example(n=20, l=3, k=5, PQmode="Heap", bound=None)
 
