@@ -153,7 +153,7 @@ class MainGenerator:
 			## Iteratively choose randomly from the available edges, but dont exceed the bound
 			iterations = 0
 			while (available > 0):
-				max_degree = min(available, self.n / int(connectionPattern))
+				max_degree = min(available, self.n / int(self.connectionPattern))
 				if (iterations < atLeastDifferent):
 					choose_from = max_degree - 1
 				else:
