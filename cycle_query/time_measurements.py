@@ -413,14 +413,14 @@ def plot(mode, target, target_l):
 
     if mode == 2:
         # plot how computational time for different l changes on the same database:
-        plt.xlabel('l')
+        plt.xlabel('query length')
         plt.ylabel('time (seconds)')
         plt.yscale('log')
-        line_1, = plt.plot(l_values_cycle, l2_any_k_time_cycle, 'x', label='line 1')
-        line_1_, = plt.plot(l_values_cycle, l2_any_k_TTF_cycle, '^', label='line 1_')
-        line_2, = plt.plot(l_values_cycle, l2_full_time_cycle, 'o', label='Line 2')
-        line_3, = plt.plot(l_values_cycle, l2_any_k_time_cycle_old, 's', label='line 3')
-        line_3_, = plt.plot(l_values_cycle, l2_any_k_TTF_cycle_old, '+', label='line 3_')
+        line_1, = plt.plot(l_values_cycle, l2_any_k_time_cycle, 'x',color='b', label='line 1')
+        line_1_, = plt.plot(l_values_cycle, l2_any_k_TTF_cycle, '^', color='g',label='line 1_')
+        line_2, = plt.plot(l_values_cycle, l2_full_time_cycle, 'o', color='r',label='Line 2')
+        line_3, = plt.plot(l_values_cycle, l2_any_k_time_cycle_old, 's', color='c',label='line 3')
+        line_3_, = plt.plot(l_values_cycle, l2_any_k_TTF_cycle_old, '+', color='m',label='line 3_')
         if target == 5:
             compare1 = np.power(1.89, l_values_cycle)
         else:
@@ -431,11 +431,11 @@ def plot(mode, target, target_l):
         compare2 = np.true_divide(compare2, 20000) - 10/20000
         compare2 = [x for _, x in sorted(zip(l_values_cycle, compare2))]
 
-        line_4, = plt.plot(sorted(l_values_cycle), compare1, label='line 4')
-        line_5, = plt.plot(sorted(l_values_cycle), compare2, '--', label='line 5')
+        line_4, = plt.plot(sorted(l_values_cycle), compare1,color='y', label='line 4')
+        line_5, = plt.plot(sorted(l_values_cycle), compare2, '--', color='gold',label='line 5')
 
-        line_6, = plt.plot(l_values_cycle, l2_boolean_cycle, 'D', label='line 6')
-        line_7, = plt.plot(l_values_cycle, l2_top1_cycle, 'p', label='line 7')
+        line_6, = plt.plot(l_values_cycle, l2_boolean_cycle, 'D', color='lime',label='line 6')
+        line_7, = plt.plot(l_values_cycle, l2_top1_cycle, 'p',color='brown', label='line 7')
 
         labels = [line_1, line_3, line_4, line_2, line_3_, line_1_, line_7, line_5, line_6]
         handles = ['any-k sort TTL', 'any-k max TTL', 'n^(l/2)', 'full ranking', 'any-k max TTF', 'any-k sort TTF',
@@ -454,7 +454,7 @@ def plot(mode, target, target_l):
         #plt.title('Cycle TTF')
         #plt.show()
 
-        plt.xlabel('l')
+        plt.xlabel('query length')
         plt.ylabel('time (seconds)')
         plt.yscale('log')
         if target == 5:
@@ -469,15 +469,17 @@ def plot(mode, target, target_l):
         compare2 = [x for _, x in sorted(zip(l_values_path, compare2))]
 
 
-        line_1, = plt.plot(l_values_path, l2_any_k_time_path, 'x', label='line 1')
-        line_3, = plt.plot(l_values_path, l2_any_k_time_path_old, 's', label='line 3')
-        line_4, = plt.plot(sorted(l_values_path), compare1, label='line 4')
-        line_2, = plt.plot(l_values_path, l2_full_time_path, 'o', label='Line 2')
-        line_3_, = plt.plot(l_values_path, l2_any_k_TTF_path_old, '+', label='line 3_')
-        line_1_, = plt.plot(l_values_path, l2_any_k_TTF_path, '^', label='line 1_')
-        line_7, = plt.plot(l_values_path, l2_top1_path, 'p', label='line 7')
-        line_5, = plt.plot(sorted(l_values_path),  compare2, '--', label='line 5')
-        line_6, = plt.plot(l_values_path, l2_boolean_path, 'D', label='line 6')
+        line_1, = plt.plot(l_values_path, l2_any_k_time_path, 'x',color='b', label='line 1')
+        line_1_, = plt.plot(l_values_path, l2_any_k_TTF_path, '^', color='g',label='line 1_')
+        line_2, = plt.plot(l_values_path, l2_full_time_path, 'o',color='r', label='Line 2')
+        line_3, = plt.plot(l_values_path, l2_any_k_time_path_old, 's', color='c',label='line 3')
+        line_3_, = plt.plot(l_values_path, l2_any_k_TTF_path_old, '+',color='m', label='line 3_')
+
+
+        line_4, = plt.plot(sorted(l_values_path), compare1, color='y',label='line 4')
+        line_5, = plt.plot(sorted(l_values_path),  compare2, '--',color='gold', label='line 5')
+        line_6, = plt.plot(l_values_path, l2_boolean_path, 'D', color='lime',label='line 6')
+        line_7, = plt.plot(l_values_path, l2_top1_path, 'p',color='brown', label='line 7')
 
 
 
@@ -516,11 +518,11 @@ def plot(mode, target, target_l):
             exp = 1.5
 
 
-        line_1, = plt.plot(n_values_cycle, n2_any_k_time_cycle, 'x', label='line 1')
-        line_1_, = plt.plot(n_values_cycle, n2_any_k_TTF_cycle, '^', label='line 1_')
-        line_2, = plt.plot(n_values_cycle, n2_full_time_cycle, 'o', label='Line 2')
-        line_3, = plt.plot(n_values_cycle, n2_any_k_time_cycle_old, 's', label='line 3')
-        line_3_, = plt.plot(n_values_cycle, n2_any_k_TTF_cycle_old, '+', label='line 3_')
+        line_1, = plt.plot(n_values_cycle, n2_any_k_time_cycle, 'x', color='b',label='line 1')
+        line_1_, = plt.plot(n_values_cycle, n2_any_k_TTF_cycle, '^', color='g', label='line 1_')
+        line_2, = plt.plot(n_values_cycle, n2_full_time_cycle, 'o', color='r',label='Line 2')
+        line_3, = plt.plot(n_values_cycle, n2_any_k_time_cycle_old, 's', color='c',label='line 3')
+        line_3_, = plt.plot(n_values_cycle, n2_any_k_TTF_cycle_old, '+', color='m', label='line 3_')
 
         compare1 = np.power(n_values_cycle, exp)
         compare1 = np.true_divide(compare1, 10)
@@ -534,11 +536,11 @@ def plot(mode, target, target_l):
 
         compare2 = [x for _, x in sorted(zip(n_values_cycle, compare2))]
 
-        line_4, = plt.plot(sorted(n_values_cycle), compare1 , label='line 4')
-        line_5, = plt.plot(sorted(n_values_cycle), compare2, '--', label='line 5')
+        line_4, = plt.plot(sorted(n_values_cycle), compare1 , color='y',label='line 4')
+        line_5, = plt.plot(sorted(n_values_cycle), compare2, '--', color='gold',label='line 5')
 
-        line_6, = plt.plot(n_values_cycle, n2_boolean_cycle, 'D', label='line 6')
-        line_7, = plt.plot(n_values_cycle, n2_top1_cycle, 'p', label='line 7')
+        line_6, = plt.plot(n_values_cycle, n2_boolean_cycle, 'D', color='lime', label='line 6')
+        line_7, = plt.plot(n_values_cycle, n2_top1_cycle, 'p', color='brown',label='line 7')
         plt.legend([line_1, line_1_, line_2, line_3, line_3_, line_4, line_5, line_6, line_7],
                    ['any-k sort TTL', 'any-k sort TTF', 'full ranking TTF/TTL', 'any-k max TTL', 'any-k max TTF', 'n^'+ str(exp)+' log n' , 'n^2 log n',"boolean", "top-1"])
         plt.title('4-Cycle')
@@ -617,12 +619,12 @@ if __name__ == "__main__":
     #measure_time_n_v2(3, 50, 4, False) #4-path
     #plot(1, 0, 0) # any-k property.
 
-    #n = 10
+    n = 10
     #measure_time_l(n)
-    #plot(2, n, 0) # l-scalability
+    plot(2, n, 0) # l-scalability
 
-    l = 4
-    measure_time_n(l)
+    #l = 4
+    #measure_time_n(l)
     #plot(3, 0, l)  # n-scalability
 
 

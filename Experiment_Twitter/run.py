@@ -9,6 +9,7 @@ import pickle
 import semi_join_utils
 import CQ
 import data_loader
+import DataGenerator
 
 def sanitize_times(time_for_each, t_preprocess):
     time_for_each[0] += t_preprocess
@@ -20,13 +21,15 @@ def sanitize_times(time_for_each, t_preprocess):
     return res
 
 ## Fixed
-max_id = 100
-l = 3
+max_id = 700
+l = 5
 k_limit = sys.maxsize
 
 ## Input relations
-rel2tuple, tuple2weight = data_loader.load_twitter("../Experiment_Twitter/", "Twitter_truncated", max_id, l)
+#rel2tuple, tuple2weight = data_loader.load_twitter("../Experiment_Twitter/", "Twitter_truncated", max_id, l)
 #DataGenerator.printRelations(rel2tuple)
+n = 700
+rel2tuple, tuple2weight = DataGenerator.getDatabase("Cycle", n, l, "Full", 50, 2)
 
 ## Preprocess
 t_start = timeit.default_timer()
@@ -50,7 +53,7 @@ f.close()
 print "Done with batch ranking"
 
 ## Run anyk-max unbounded
-'''
+
 data_structure_list = ["Heap", "Btree"]
 for ds in data_structure_list:
     TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k_limit, l, Deepak=False, PQmode= "Heap", bound = None, debug = False)
@@ -60,7 +63,7 @@ for ds in data_structure_list:
         f.write("k = " + str(i + 1) + " : " + str(times[i]) + "\n")
     f.close()
     print "Done with anyk_max_" + ds + "_unbounded"
-'''
+
 
 ## Run anyk-sort unbounded
 data_structure_list = ["Heap", "Btree"]
@@ -72,6 +75,7 @@ for ds in data_structure_list:
         f.write("k = " + str(i + 1) + " : " + str(times[i]) + "\n")
     f.close()
     print "Done with anyk_sort_" + ds + "_unbounded"
+
 
 ## Run Boolean
 '''

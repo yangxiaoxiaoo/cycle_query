@@ -72,7 +72,7 @@ class PEI_path():
             return None
         if cur_frontier in sortedmap:
             successor_frontier = sortedmap[cur_frontier]  # there is a successor
-            assert res.mergable(successor_frontier, tuple2rem)
+            #assert res.mergable(successor_frontier, tuple2rem)
             res.instance.insert_relation(successor_frontier)
             res.wgt += (tuple2weight[successor_frontier] - tuple2weight[cur_frontier])
             res.hrtc = res.instance.max_wgt_rem(tuple2rem)

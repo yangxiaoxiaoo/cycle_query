@@ -11,10 +11,10 @@
 
 import abc
 import heapq
-import treap
+#import treap
 import blist
 import fib_heap
-import pairing_heap
+#import pairing_heap
 import sys
 
 def initialize_priority_queue(PQmode, bound):
