@@ -17,31 +17,21 @@ import fib_heap
 #import pairing_heap
 import sys
 
-def initialize_priority_queue(PQmode, bound):
-    if bound is None:
-        if PQmode == "Heap": return priority_queue_heap()
-        elif PQmode == "Btree": return priority_queue_btree()
-        elif PQmode == "Treap": return priority_queue_treap()
-        elif PQmode == "FibHeap": return priority_queue_FibHeap()
-        elif PQmode == "PairHeap": return priority_queue_PairHeap()
-        else:
-            print "PQ data structure not supported!"
-            sys.exit(1)
+def initialize_priority_queue(PQmode, bound = None, initialize_with = []):
+    if PQmode == "Heap": return priority_queue_heap(bound, initialize_with)
+    elif PQmode == "Btree": return priority_queue_btree(bound, initialize_with)
+    elif PQmode == "Treap": return priority_queue_treap(bound, initialize_with)
+    elif PQmode == "FibHeap": return priority_queue_FibHeap(bound, initialize_with)
+    elif PQmode == "PairHeap": return priority_queue_PairHeap(bound, initialize_with)
     else:
-        if PQmode == "Heap": return priority_queue_heap(bound)
-        elif PQmode == "Btree": return priority_queue_btree(bound)
-        elif PQmode == "Treap": return priority_queue_treap(bound)
-        elif PQmode == "FibHeap": return priority_queue_FibHeap(bound)
-        elif PQmode == "PairHeap": return priority_queue_PairHeap(bound)
-        else:
-            print "PQ data structure not supported!"
-            sys.exit(1)        
+        print "PQ data structure not supported!"
+        sys.exit(1)        
 
 
 class priority_queue_abstract():
 	__metaclass__ = abc.ABCMeta
  
-	def __init__(self, size = None):
+	def __init__(self, size, initialize_with):
 		self.max_size = size
 		self.curr_size = 0
 	
@@ -80,9 +70,13 @@ class priority_queue_abstract():
 
 class priority_queue_heap(priority_queue_abstract):
 
-	def __init__(self, size = None):
-		super(priority_queue_heap, self).__init__(size)
-		self.l = []
+	def __init__(self, size, initialize_with):
+		super(priority_queue_heap, self).__init__(size, initialize_with)
+		if initialize_with == []:
+			self.l = []
+		else:
+			self.l = initialize_with
+			heapq.heapify(self.l)
 
 	## Returns the minimum weight of all items stored
 	def min_weight(self):
@@ -119,12 +113,14 @@ class priority_queue_heap(priority_queue_abstract):
 
 class priority_queue_FibHeap(priority_queue_abstract):
 
-	def __init__(self, size = None):
+	def __init__(self, size, initialize_with):
 		if size != None:
 			print "Bounded Fibonacci Heap currently unsupported!"
 			sys.exit(1)
-		super(priority_queue_FibHeap, self).__init__(size)
+		super(priority_queue_FibHeap, self).__init__(size, initialize_with)
 		self.l = fib_heap.FibonacciHeap()
+		for item in initialize_with:
+			self.add(item)
 
 	## Returns the minimum weight of all items stored
 	def min_weight(self):
@@ -154,12 +150,14 @@ class priority_queue_FibHeap(priority_queue_abstract):
 
 class priority_queue_PairHeap(priority_queue_abstract):
 
-	def __init__(self, size = None):
+	def __init__(self, size, initialize_with):
 		if size != None:
 			print "Bounded Pairing Heap currently unsupported!"
 			sys.exit(1)
-		super(priority_queue_PairHeap, self).__init__(size)
+		super(priority_queue_PairHeap, self).__init__(size, initialize_with)
 		self.l = pairing_heap.Heap()
+		for item in initialize_with:
+			self.add(item)
 
 	## Returns the minimum weight of all items stored
 	def min_weight(self):
@@ -184,9 +182,11 @@ class priority_queue_PairHeap(priority_queue_abstract):
 
 class priority_queue_btree(priority_queue_abstract):
 	
-	def __init__(self, size = None):
-		super(priority_queue_btree, self).__init__(size)
+	def __init__(self, size, initialize_with):
+		super(priority_queue_btree, self).__init__(size, initialize_with)
 		self.l = blist.sortedlist([], key = lambda x: x[0])
+		for item in initialize_with:
+			self.add(item)
 
 	## Returns the minimum weight of all items stored
 	def min_weight(self):
@@ -221,9 +221,11 @@ class priority_queue_btree(priority_queue_abstract):
 
 class priority_queue_treap(priority_queue_abstract):
 	
-	def __init__(self, size = None):
-		super(priority_queue_treap, self).__init__(size)
+	def __init__(self, size, initialize_with):
+		super(priority_queue_treap, self).__init__(size, initialize_with)
 		self.l = treap.treap()
+		for item in initialize_with:
+			self.add(item)
 
 	## Returns the minimum weight of all items stored
 	def min_weight(self):
