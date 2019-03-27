@@ -1,5 +1,6 @@
 import functools
 import copy
+import heapq
 
 @functools.total_ordering
 class PEI():
@@ -57,6 +58,34 @@ class PEI_path():
         # if adding the relation, it's guaranteed that a path won't form
         # then return False, else return true.
         return new_tuple in tuple2rem
+
+    def lazy_successor(self, prev2sortedmap, prev2heap, tuple2weight, tuple2rem):
+        # lazy sort:
+        # when retrieve from sortedmap is not successful, pop from heap and populate
+        frontier = self.instance.frontier()
+        join_key = self.instance.length - 1, frontier[0]
+        sortedmap = prev2sortedmap[join_key]
+        res = copy.deepcopy(self)
+        cur_frontier = res.instance.popfront()
+
+        if cur_frontier is None:  # empty path cannot be popped.
+            print "empty path considered? Please double check..."
+            return None
+        if cur_frontier not in sortedmap:
+
+            # pop from the corresponding heap -- if heap is empty return None.
+            heap = prev2heap[join_key]
+            if len(heap) == 0:
+                return None
+            else:
+                top = heapq.heappop(heap)
+                sortedmap[cur_frontier] = top
+
+        successor_frontier = sortedmap[cur_frontier]  # there is a successor
+        res.instance.insert_relation(successor_frontier)
+        res.wgt += (tuple2weight[successor_frontier] - tuple2weight[cur_frontier])
+        res.hrtc = res.instance.max_wgt_rem(tuple2rem)
+        return res
 
 
     def successor(self, prev2sortedmap, tuple2weight, tuple2rem):
@@ -133,6 +162,38 @@ class PEI_cycle():
         # if adding the relation, it's guaranteed that a cycle won't form
         # then return False, else return true.
         return (new_tuple, self.breakpoint) in tuple2rem
+
+    def lazy_successor(self, prev2sortedmap, prev2heap, tuple2weight, tuple2rem):
+        # lazy sort:
+        # when retrieve from sortedmap is not successful, pop from heap and populate
+        frontier = self.instance.frontier()
+        assert self is not None
+        join_key = (self.instance.length - 1 ,frontier[0], self.breakpoint)
+        if join_key not in prev2sortedmap:
+            return None
+        sortedmap = prev2sortedmap[join_key]
+        res = copy.deepcopy(self)
+        cur_frontier = res.instance.popfront()
+
+        if cur_frontier is None:  # empty path cannot be popped.
+            print "empty path considered? Please double check..."
+            return None
+        if cur_frontier not in sortedmap:
+
+            # pop from the corresponding heap -- if heap is empty return None.
+            heap = prev2heap[join_key]
+            if len(heap) == 0:
+                return None
+            else:
+                top = heapq.heappop(heap)
+                sortedmap[cur_frontier] = top
+
+        successor_frontier = sortedmap[cur_frontier]  # there is a successor
+        res.instance.insert_relation(successor_frontier)
+        res.wgt += (tuple2weight[successor_frontier] - tuple2weight[cur_frontier])
+        res.hrtc = res.instance.max_wgt_rem(tuple2rem, self.breakpoint)
+        return res
+
 
     def successor(self, prev2sortedmap, tuple2weight, tuple2rem):
         # return a successor of current instance if there exist one, return None if not.
