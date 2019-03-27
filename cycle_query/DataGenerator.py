@@ -22,7 +22,7 @@ def parse_args():
 	parser.add_argument('-n', action="store", dest="n", default=5, type=int, help="Maximum cardinality of relations")
 	parser.add_argument('-l', action="store", dest="length", default=4, type=int, help="Length of Path or Cycle")
 	parser.add_argument('-c', action="store", dest="relationCardinality", choices={"Full", "Random"}, default="Full", help="\"Full\"=Maximum possible cardinality for relations|\"Random\"=Random cardinality for each relation")
-	parser.add_argument('-p', action="store", dest="connectionPattern", default="Random", help="\"HardCase\"=Fanout:1->max->1->...|\"Random\"=Edges are decided by uniform sampling|\"Int\"=Uniform sampling bounded by n/Int")
+	parser.add_argument('-p', action="store", dest="connectionPattern", default="Random", help="\"HardCase\"=Fanout:1->max->1->...|\"Random\"=Edges are decided by uniform sampling|\"Int\"=Uniform random/bound with a maximum degree")
 	parser.add_argument('-u', action="store", dest="unionOfDatabases", default=1, type=int, help="By setting this option, the result will be the union of that many sub-databases (Useful for the Hard Case where it will alternate the fanout across databases)")
 	parser.add_argument('--v', action="store_true", dest='verbose', default=False, help="Print attributes and Relations to STDIN")
 
@@ -153,7 +153,7 @@ class MainGenerator:
 			## Iteratively choose randomly from the available edges, but dont exceed the bound
 			iterations = 0
 			while (available > 0):
-				max_degree = min(available, self.n / int(self.connectionPattern))
+				max_degree = min(available, int(self.connectionPattern))
 				if (iterations < atLeastDifferent):
 					choose_from = max_degree - 1
 				else:
@@ -253,8 +253,8 @@ class MainGenerator:
 def getDatabase(queryType, n, length, relationCardinality, connectionPattern, databasesNo):
 	if connectionPattern != "Random" and connectionPattern != "HardCase":
 		connectionPattern = int(connectionPattern)
-		if (connectionPattern > n):
-			print "if -c argument is used as an integer, it must be <= n"
+		if (connectionPattern > (n / databasesNo)):
+			print "if -c argument is used as an integer, it must be <= n / databasesNo"
 			sys.exit(1)
 
 	gen = MainGenerator(queryType, n, length, relationCardinality, connectionPattern, databasesNo)
