@@ -6,6 +6,7 @@ import copy
 import timeit
 import semi_join_utils
 import sys
+import heapq
 
 def path_SJ_reduce_l_old(rel2tuple, l):
     #path semi-join bottom-up, build dictionary to connected tuples.
@@ -414,6 +415,51 @@ def Deepak_sort_cycle(tuple2rem, breakpoints, tuple2weight, rel2tuple, l):
     return res
 
 
+def Deepak_sort_cycle_lazy(tuple2rem, breakpoints, tuple2weight, rel2tuple, l):
+    # lazy sort: return a heap and a dictionary: the dictionary is originally empty; the caller of it will keep modifying it.
+    # the heap keeps all content
+    # caller check if key is in dictionary: if so, find and use; if not, pop from heap and put into dict, use.
+
+    # l is the goal length, build sorted subtree weights for R0, R1...Rl-1
+    key2list = dict() # first map all keys in the output dictionary into a list of (subtree-weight, tuple)
+
+    for bp in breakpoints:
+        for i in range(l-1, -1, -1):
+
+            relation = 'R' + str(i)
+            #if i == l-1:
+            #    for t in rel2tuple[relation]:
+            #        if t[1] == bp:
+            #            if (i, t[0], t[1]) in key2list:
+            #                key2list[i, t[0], t[1]].append((tuple2weight[t], t))
+            #            else:
+            #                key2list[i, t[0], t[1]] = [(tuple2weight[t], t)]
+
+            if True:
+                for t in rel2tuple[relation]:
+
+                    if (t, bp) in tuple2rem:
+                        if (i, t[0], bp) in key2list:
+                            key2list[i, t[0], bp].append((tuple2weight[t] + tuple2rem[t, bp], t))
+                        else:
+                            key2list[i, t[0], bp] = [(tuple2weight[t] + tuple2rem[t, bp], t)]
+
+    res = dict()
+    for k in key2list:
+        localdict = dict()
+        list = key2list[k]
+        heapq.heapify(list)
+        #heapify in O(n), instead of list.sort()
+
+        if len(list)!= 0:
+            localdict['#'] = list[0][1]
+
+        res[k] = localdict
+
+    # key2list maps a join key to a heap that you can heappop from.
+    return res, key2list
+
+
 
 def heuristic_build_l_path(tuple2weight, rel2tuple, tu2down_neis, l):
     # build a dictionary from tuple down to the remaining weight not including tuple
@@ -473,6 +519,42 @@ def Deepak_sort_path(tuple2rem, tuple2weight, rel2tuple, l):
         res[k] = localdict
     # print res
     return res
+
+def Deepak_sort_path_lazy(tuple2rem, tuple2weight, rel2tuple, l):
+    # l is the goal length, build sorted subtree weights for R0, R1...Rl-1
+    key2list = dict() # first map all keys in the output dictionary into a list of (subtree-weight, tuple)
+
+    for i in range(0, l):
+
+        relation = 'R' + str(i)
+        if i == l-1:
+            for t in rel2tuple[relation]:
+                if (i, t[0]) in key2list:
+                    key2list[i, t[0]].append((tuple2weight[t], t))
+                else:
+                    key2list[i, t[0]] = [(tuple2weight[t], t)]
+
+        else:
+            for t in rel2tuple[relation]:
+                if t in tuple2rem:
+                    if (i, t[0]) in key2list:
+                        key2list[i, t[0]].append((tuple2weight[t] + tuple2rem[t], t))
+                    else:
+                        key2list[i, t[0]] = [(tuple2weight[t] + tuple2rem[t], t)]
+
+    res = dict()
+    for k in key2list:
+        localdict = dict()
+        list = key2list[k]
+        heapq.heapify(list)
+
+        if len(list)!= 0:
+            localdict['#'] = list[0][1]
+
+        res[k] = localdict
+
+    # key2list maps a join key to a heap that you can heappop from.
+    return res, key2list
 
 
 def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak, PQmode, bound, debug):

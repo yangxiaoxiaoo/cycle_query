@@ -28,8 +28,8 @@ k_limit = sys.maxsize
 ## Input relations
 #rel2tuple, tuple2weight = data_loader.load_twitter("../Experiment_Twitter/", "Twitter_truncated", max_id, l)
 #DataGenerator.printRelations(rel2tuple)
-n = 700
-rel2tuple, tuple2weight = DataGenerator.getDatabase("Cycle", n, l, "Full", 50, 2)
+n = 1500
+rel2tuple, tuple2weight = DataGenerator.getDatabase("Cycle", n, l, "Full", 100, 2)
 
 ## Preprocess
 t_start = timeit.default_timer()
