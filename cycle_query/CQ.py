@@ -144,20 +144,24 @@ def priority_search_l_cycle_naive(K, rel2tuple, tuple2weight, tu2down_neis, l):
 '''
 
 
-def priority_search_l_cycle_naive_init(rel2tuple, tuple2weight, bp_set, bptu2down_neis, l, Deepak, PQmode, bound):
+def priority_search_l_cycle_naive_init(rel2tuple, tuple2weight, bp_set, bptu2down_neis, l, Deepak, Lazy, PQmode, bound):
     #used by a global PQ_global.
     PQ = priority_queue.initialize_priority_queue(PQmode, bound)
     tuple2rem = heuristic_build_l_cycle(tuple2weight, rel2tuple, bp_set,bptu2down_neis, l)
 
     if Deepak:
-        prev2sortedmap = Deepak_sort_cycle(tuple2rem, bp_set, tuple2weight, rel2tuple, l)
+        if Lazy:
+            prev2sortedmap, prev2heap = Deepak_sort_cycle_lazy(tuple2rem, bp_set, tuple2weight, rel2tuple, l)
+        else:
+            prev2sortedmap = Deepak_sort_cycle(tuple2rem, bp_set, tuple2weight, rel2tuple, l)
+            prev2heap = None
 
         for k in prev2sortedmap:
             if k[0] == 0:
                 tu = prev2sortedmap[k]['#']  # first
                 if (tu, tu[0]) in tuple2rem:
                     PQ.add((globalclass.PEI_cycle(tu, tuple2weight[tu], tuple2rem[(tu, tu[0])], l), None))
-        return prev2sortedmap, tuple2rem, PQ
+        return prev2sortedmap, prev2heap, tuple2rem, PQ
 
     else:
         for tu in rel2tuple['R0']:
@@ -165,7 +169,7 @@ def priority_search_l_cycle_naive_init(rel2tuple, tuple2weight, bp_set, bptu2dow
                 PQ.add((globalclass.PEI_cycle(tu, tuple2weight[tu], tuple2rem[(tu, tu[0])], l), None))
         return tuple2rem, PQ
 
-def priority_search_l_cycle_naive_next(tuple2weight, bptu2down_neis, l, PQ, tuple2rem, prev2sortedmap, Deepak):
+def priority_search_l_cycle_naive_next(tuple2weight, bptu2down_neis, l, PQ, tuple2rem, prev2sortedmap, prev2heap, Deepak, Lazy):
     #used by a gobal PQ_global.
     #takes a PQ for this sub-database, return the next
     #PQ pass by ref, can be changed.
@@ -177,7 +181,10 @@ def priority_search_l_cycle_naive_next(tuple2weight, bptu2down_neis, l, PQ, tupl
             ## Decrease PQ's maximum size (works for any-k sort)
             #PQ.decrease_max_size()
 
-            successor_PEI_cycle = cur_PEI_cycle.successor(prev2sortedmap, tuple2weight, tuple2rem)
+            if Lazy:
+                successor_PEI_cycle = cur_PEI_cycle.lazy_successor(prev2sortedmap, prev2heap, tuple2weight, tuple2rem)
+            else:
+                successor_PEI_cycle = cur_PEI_cycle.successor(prev2sortedmap, tuple2weight, tuple2rem)
             if successor_PEI_cycle is not None:
                 PQ.add((successor_PEI_cycle, None))
                 assert successor_PEI_cycle > cur_PEI_cycle
@@ -188,7 +195,12 @@ def priority_search_l_cycle_naive_next(tuple2weight, bptu2down_neis, l, PQ, tupl
                     print "type error! debug only"
                     break
                 #print cur_PEI_cycle.instance.length
-                successor_PEI_cycle = cur_PEI_cycle.successor(prev2sortedmap, tuple2weight, tuple2rem)
+                if Lazy:
+                    successor_PEI_cycle = cur_PEI_cycle.lazy_successor(prev2sortedmap, prev2heap, tuple2weight,
+                                                                       tuple2rem)
+                else:
+                    successor_PEI_cycle = cur_PEI_cycle.successor(prev2sortedmap, tuple2weight, tuple2rem)
+
                 if successor_PEI_cycle is not None:
                     PQ.add((successor_PEI_cycle, None))
                     assert successor_PEI_cycle > cur_PEI_cycle
@@ -248,7 +260,7 @@ def simple_join(rel2tuple, tuple2weight, tu2down_neis, start, end):
     return list2wgt
 
 
-def priority_search_l_cycle_light_init(rel2tuple, tuple2weight, tu2down_neis, l, Deepak, PQmode, bound):
+def priority_search_l_cycle_light_init(rel2tuple, tuple2weight, tu2down_neis, l, Deepak, Lazy, PQmode, bound):
     #print rel2tuple
     # compute a set of I1_list, a set of I2_list
     # for each I1_list, the max I2_list weight for it, a list of all matching I2_list
@@ -291,17 +303,21 @@ def priority_search_l_cycle_light_init(rel2tuple, tuple2weight, tu2down_neis, l,
         for k in key2list:
             localdict = dict()
             list = key2list[k]
-            list.sort()
+            if Lazy:
+                heapq.heapify(list)
+            else:
+                list.sort()
             if len(list) != 0:
                 localdict['#'] = list[0][1]
-                for i in range(len(list) - 1):
-                    localdict[list[i][1]] = list[i + 1][1]
+                if not Lazy:
+                    for i in range(len(list) - 1):
+                        localdict[list[i][1]] = list[i + 1][1]
             bp2sortedmap[k] = localdict
-        return bp2sortedmap, breakpoints2I2, I2_list2wgt, PQ
+        return bp2sortedmap, key2list, breakpoints2I2, I2_list2wgt, PQ
 
 
 
-def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, PQ, bp2sortedmap, Deepak):
+def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, PQ, bp2sortedmap, bp2heap, Deepak, Lazy):
     while PQ.size() != 0:
         (cur_PEI_cycle, _) = PQ.pop_min()
         if Deepak:
@@ -312,7 +328,10 @@ def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, PQ, bp2sorte
             #if successor_PEI_cycle != None:
             #    heapq.heappush(PQ, successor_PEI_cycle)
             if cur_PEI_cycle.instance.completion:
-                successor_PEI_cycle = cur_PEI_cycle.bigsucc(breakpoints2I2, I2_list2wgt, bp2sortedmap)
+                if Lazy:
+                    successor_PEI_cycle = cur_PEI_cycle.bigsucc_lazy(breakpoints2I2, I2_list2wgt, bp2sortedmap, bp2heap)
+                else:
+                    successor_PEI_cycle = cur_PEI_cycle.bigsucc(breakpoints2I2, I2_list2wgt, bp2sortedmap)
                 if successor_PEI_cycle is not None:
                     PQ.add((successor_PEI_cycle, None))
                 return cur_PEI_cycle
@@ -320,7 +339,10 @@ def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, PQ, bp2sorte
             if not cur_PEI_cycle:
                 continue
             assert cur_PEI_cycle.instance.completion
-            successor_PEI_cycle = cur_PEI_cycle.bigsucc(breakpoints2I2, I2_list2wgt, bp2sortedmap)
+            if Lazy:
+                successor_PEI_cycle = cur_PEI_cycle.bigsucc_lazy(breakpoints2I2, I2_list2wgt, bp2sortedmap, bp2heap)
+            else:
+                successor_PEI_cycle = cur_PEI_cycle.bigsucc(breakpoints2I2, I2_list2wgt, bp2sortedmap)
             if successor_PEI_cycle is not None:
                 PQ.add((successor_PEI_cycle, None))
             return cur_PEI_cycle
@@ -453,6 +475,7 @@ def Deepak_sort_cycle_lazy(tuple2rem, breakpoints, tuple2weight, rel2tuple, l):
 
         if len(list)!= 0:
             localdict['#'] = list[0][1]
+            heapq.heappop(list)
 
         res[k] = localdict
 
@@ -550,6 +573,7 @@ def Deepak_sort_path_lazy(tuple2rem, tuple2weight, rel2tuple, l):
 
         if len(list)!= 0:
             localdict['#'] = list[0][1]
+            heapq.heappop(list)
 
         res[k] = localdict
 
@@ -557,7 +581,7 @@ def Deepak_sort_path_lazy(tuple2rem, tuple2weight, rel2tuple, l):
     return res, key2list
 
 
-def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak, PQmode, bound, debug):
+def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak, Lazy, PQmode, bound, debug):
 
     #Deepak = True: only push sorted successors.
     if debug:
@@ -571,8 +595,11 @@ def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak, 
     tuple2rem = heuristic_build_l_path(tuple2weight, rel2tuple, tu2down_neis, l)
 
     if Deepak:  #push only "null pointed first heads"
+        if Lazy:
+            prev2sortedmap, prev2heap = Deepak_sort_path_lazy(tuple2rem, tuple2weight, rel2tuple, l)
+        else:
+            prev2sortedmap = Deepak_sort_path(tuple2rem, tuple2weight, rel2tuple, l)
 
-        prev2sortedmap = Deepak_sort_path(tuple2rem, tuple2weight, rel2tuple, l)
         for k in prev2sortedmap:
             if k[0] == 0:
                 tu = prev2sortedmap[k]['#'] # first
@@ -587,16 +614,31 @@ def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak, 
         (cur_PEI_path, _) = PQ.pop_min()
 
         if Deepak:
-            successor_PEI_path = cur_PEI_path.successor(prev2sortedmap, tuple2weight, tuple2rem)
+            if Lazy:
+                successor_PEI_path = cur_PEI_path.lazy_successor(prev2sortedmap, prev2heap, tuple2weight, tuple2rem)
+            else:
+                successor_PEI_path = cur_PEI_path.successor(prev2sortedmap, tuple2weight, tuple2rem)
 
             if successor_PEI_path is not None:
+                if not cur_PEI_path < successor_PEI_path:
+                    print "lazy sort debug"
+                    print cur_PEI_path.wgt
+                    print successor_PEI_path.wgt
+
                 assert cur_PEI_path < successor_PEI_path
                 PQ.add((successor_PEI_path, None))
 
             while not cur_PEI_path.instance.completion:
                 cur_PEI_path.expand(prev2sortedmap, tuple2weight, tuple2rem)
-                successor_PEI_path = cur_PEI_path.successor(prev2sortedmap, tuple2weight, tuple2rem)
+                if Lazy:
+                    successor_PEI_path = cur_PEI_path.lazy_successor(prev2sortedmap, prev2heap, tuple2weight, tuple2rem)
+                else:
+                    successor_PEI_path = cur_PEI_path.successor(prev2sortedmap, tuple2weight, tuple2rem)
                 if successor_PEI_path is not None:
+                    if not cur_PEI_path < successor_PEI_path:
+                        print "lazy sort debug"
+                        print cur_PEI_path.wgt
+                        print successor_PEI_path.wgt
                     assert cur_PEI_path < successor_PEI_path
                     PQ.add((successor_PEI_path, None))
             if debug:
@@ -730,9 +772,12 @@ def l_path_sim(l, k, PQmode, bound):
     rel2tuple, tuple2weight = semi_join_utils.build_relation(l, var2cand, weightrange=10)
     tu2down_neis, tu2up_neis = path_SJ_reduce_l(rel2tuple, l)
     print "algo: any-k priotitized search WWW"
-    TOP_K_max, time_for_each = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, False, PQmode, bound, debug=True)
+    TOP_K_max, time_for_each = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, False, False, PQmode, bound, debug=True)
     print "algo: any-k priotitized search Deepak"
-    TOP_K_sort, time_for_each = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, True, PQmode, bound, debug=True)
+    TOP_K_sort, time_for_each = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, True, False, PQmode, bound, debug=True)
+    print "algo: any-k priotitized search Lazy sort"
+    TOP_K_sort, time_for_each = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, True, True, PQmode,
+                                                       bound, debug=True)
     # assert TOP_K_PQ2 == TOP_K_PQ1 -- observed only rounding numerical errors, ignore.
     print "algo: enumerate all"
     path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis, k, l, debug=True)
@@ -935,7 +980,7 @@ def l_cycle_naive(l, k):
         assert TOP_K_PQ == TOP_K_PQ2
 '''
 
-def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, PQmode, bound, debug):
+def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, Lazy, PQmode, bound, debug):
     time_start = timeit.default_timer()
 
     partitions = l_cycle_database_partition(rel2tuple, l)
@@ -946,6 +991,8 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, PQmod
     TOP_K = []
     time_for_each = []
     prev2sortedmap = None
+    prev2heap = None
+    bp2heap = None
     prev2sortedmaps = []
 
 
@@ -960,18 +1007,23 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, PQmod
         tu2up_neis_list.append(bptu2up_neis)
 
         if Deepak:
-            prev2sortedmap, tuple2rem, PQ = priority_search_l_cycle_naive_init(rotated_subdatabase, tuple2weight, bp_set, bptu2down_neis, l, Deepak, PQmode, bound)
+            prev2sortedmap, prev2heap, tuple2rem, PQ = priority_search_l_cycle_naive_init(rotated_subdatabase, tuple2weight, bp_set, bptu2down_neis, l, Deepak, Lazy, PQmode, bound)
             if debug:
                 assert type(prev2sortedmap) == dict
             prev2sortedmaps.append(prev2sortedmap)
         else:
-            tuple2rem, PQ = priority_search_l_cycle_naive_init(rotated_subdatabase, tuple2weight, bp_set, bptu2down_neis, l, Deepak, PQmode, bound)
+            tuple2rem, PQ = priority_search_l_cycle_naive_init(rotated_subdatabase, tuple2weight, bp_set, bptu2down_neis, l, Deepak, Lazy, PQmode, bound)
         small_PQ_list.append(PQ)  # small_PQ_list[i] is i-th partition's local PQ.
         tuple2rem_list.append(tuple2rem)  # this is different for subdatabases, need to keep.
 
     # all light case
     tu2down_neis, tu2up_neis = cycle_SJ_reduce_l_light(partitions[l], l)
-    bp2sortedmap, breakpoints2I2, I2_list2wgt, PQ = priority_search_l_cycle_light_init(partitions[l], tuple2weight, tu2down_neis, l, Deepak, PQmode, bound)
+    if Deepak:
+        bp2sortedmap, bp2heap, breakpoints2I2, I2_list2wgt, PQ = \
+            priority_search_l_cycle_light_init(partitions[l], tuple2weight, tu2down_neis, l, Deepak, Lazy, PQmode, bound)
+    else:
+        bp2sortedmap, breakpoints2I2, I2_list2wgt, PQ = \
+            priority_search_l_cycle_light_init(partitions[l], tuple2weight, tu2down_neis, l, Deepak, Lazy, PQmode, bound)
     small_PQ_list.append(PQ)
 
     # start global search
@@ -1004,7 +1056,8 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, PQmod
             if Deepak:
                 prev2sortedmap = prev2sortedmaps[top_pos]
             next_result = priority_search_l_cycle_naive_next \
-                (tuple2weight, tu2down_neis_list[top_pos], l, small_PQ_list[top_pos], tuple2rem_list[top_pos], prev2sortedmap, Deepak)
+                (tuple2weight, tu2down_neis_list[top_pos], l, small_PQ_list[top_pos], tuple2rem_list[top_pos],
+                 prev2sortedmap, prev2heap, Deepak, Lazy)
             #if len(TOP_K)!= 0 and next_result.wgt == TOP_K[-1].wgt:
             #    print next_result.instance.R_list
             #    print TOP_K[-1].instance.R_list
@@ -1012,7 +1065,7 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, PQmod
 
         else:  # all light partition
 
-            next_result = priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, small_PQ_list[l], bp2sortedmap, Deepak)
+            next_result = priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, small_PQ_list[l], bp2sortedmap, bp2heap, Deepak, Lazy)
             if not next_result:
                 head_values[top_pos] = 99999999
             elif isinstance(next_result, globalclass.PEI_lightcycle) and (len(TOP_K)== 0 or len(TOP_K)!= 0):# and next_result.instance.R_list != TOP_K[-1].instance.R_list):  # when there is no next, maybe nontype.
@@ -1112,9 +1165,12 @@ def run_path_example(n, l, k, PQmode, bound):
     rel2tuple, tuple2weight = DataGenerator.getDatabase("Path", n, l, "Full", "HardCase", 2)
     tu2down_neis, tu2up_neis = path_SJ_reduce_l(rel2tuple, l)
     print "PATH algo: any-k sort"
-    TOP_K_sort, time_for_each_sort = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= True, PQmode = PQmode, bound = bound, debug = True)
+    TOP_K_sort, time_for_each_sort = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= True, Lazy= False, PQmode = PQmode, bound = bound, debug = True)
     print "PATH algo: any-k max"
-    TOP_K_max, time_for_each_max = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= False, PQmode = PQmode, bound = bound, debug = True)
+    TOP_K_max, time_for_each_max = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= False, Lazy= False, PQmode = PQmode, bound = bound, debug = True)
+    print "PATH algo: any-k lazy"
+    TOP_K_max, time_for_each_max = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak=False,
+                                                          Lazy=True, PQmode=PQmode, bound=bound, debug=True)
     print "PATH algo: enumerate all"
     sorted_values = path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis, k, l, debug = True)
 
@@ -1138,13 +1194,20 @@ def run_cycle_example(n, l, k, PQmode, bound):
     rel2tuple, tuple2weight = DataGenerator.getDatabase("Cycle", n, l, "Full", "HardCase", 2)
     tu2down_neis, tu2up_neis = cycle_SJ_reduce_l_light(rel2tuple, l)
     print "Cycle algo: any-k sort"
-    TOP_K_sort, time_for_each_sort = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, PQmode= PQmode, bound = bound, debug = True)
+    TOP_K_sort, time_for_each_sort = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, Lazy=False,PQmode= PQmode, bound = bound, debug = True)
     for PEI in TOP_K_sort:
         print PEI.wgt
     print "Cycle algo: any-k max"
-    TOP_K_max, time_for_each_max = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=False, PQmode=PQmode, bound=bound, debug=True)
+    TOP_K_max, time_for_each_max = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=False, Lazy=False, PQmode=PQmode, bound=bound, debug=True)
     for PEI in TOP_K_max:
         print PEI.wgt
+    print "Cycle algo: any-k lazy"
+    TOP_K_max, time_for_each_max = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=False,
+                                                                       Lazy=True, PQmode=PQmode, bound=bound,
+                                                                       debug=True)
+    for PEI in TOP_K_max:
+        print PEI.wgt
+
     print "Cycle algo: enumerate all"
     results, sorted_values = cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l, False, debug= True)
  
@@ -1173,6 +1236,7 @@ if __name__ == "__main__":
 
     #test_correctness()
     #while(True):
+
     run_path_example(n=20, l=5, k=5, PQmode="Heap", bound=None)
     run_cycle_example(n=20, l=3, k=5, PQmode="Heap", bound=None)
 

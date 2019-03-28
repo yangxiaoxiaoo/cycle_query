@@ -79,7 +79,7 @@ class PEI_path():
                 return None
             else:
                 top = heapq.heappop(heap)
-                sortedmap[cur_frontier] = top
+                sortedmap[cur_frontier] = top[1]
 
         successor_frontier = sortedmap[cur_frontier]  # there is a successor
         res.instance.insert_relation(successor_frontier)
@@ -186,7 +186,7 @@ class PEI_cycle():
                 return None
             else:
                 top = heapq.heappop(heap)
-                sortedmap[cur_frontier] = top
+                sortedmap[cur_frontier] = top[1]
 
         successor_frontier = sortedmap[cur_frontier]  # there is a successor
         res.instance.insert_relation(successor_frontier)
@@ -290,6 +290,27 @@ class PEI_lightcycle(PEI_cycle):
             return res
         else:
             return None
+
+    def bigsucc_lazy(self, breakpoints2I2, I2_list2wgt, bp2sortedmap, bp2heap):
+
+        sortedmap = bp2sortedmap[self.breakpointpair]
+        res = PEI_lightcycle(self.i1[0], 0, 0, self.goal_length)
+        res.biginit(self.i1, self.i1_wgt, self.i1_hrtc, self.goal_length)
+        if self.i2 in sortedmap:
+            succ_i2 = sortedmap[self.i2]
+            res.bigmerge(succ_i2, I2_list2wgt[succ_i2])
+            return res
+        else:
+            heap = bp2heap[self.i2]
+            if len(heap) == 0:
+                return None
+            else:
+                top = heapq.heappop(heap)
+                succ_i2 = top[1]
+                sortedmap[self.i2] = succ_i2
+                res.bigmerge(succ_i2, I2_list2wgt[succ_i2])
+                return res
+
 
     def bigexpand(self, breakpoints2I2, I2_list2wgt, bp2sortedmap):
         if self.breakpointpair not in bp2sortedmap:
