@@ -7,7 +7,7 @@ echo "500 600 700" > ${hash}/3
 echo "300 400 500" > ${hash}/4
 echo "100 200 300" > ${hash}/5
 echo "50 100 150" > ${hash}/7
-for l in 3 5 7
+for l in 4 5 7
 do
 	value=$(< ${hash}/$l)
 	IFS=' ' read -ra maxids <<< $value

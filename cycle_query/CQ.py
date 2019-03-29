@@ -449,13 +449,6 @@ def Deepak_sort_cycle_lazy(tuple2rem, breakpoints, tuple2weight, rel2tuple, l):
         for i in range(l-1, -1, -1):
 
             relation = 'R' + str(i)
-            #if i == l-1:
-            #    for t in rel2tuple[relation]:
-            #        if t[1] == bp:
-            #            if (i, t[0], t[1]) in key2list:
-            #                key2list[i, t[0], t[1]].append((tuple2weight[t], t))
-            #            else:
-            #                key2list[i, t[0], t[1]] = [(tuple2weight[t], t)]
 
             if True:
                 for t in rel2tuple[relation]:
@@ -1235,10 +1228,10 @@ if __name__ == "__main__":
     #l_cycle_split(3, 5, test=False, PQmode="Heap", bound=3)
 
     #test_correctness()
-    #while(True):
-
-    run_path_example(n=20, l=5, k=5, PQmode="Heap", bound=None)
-    run_cycle_example(n=20, l=3, k=5, PQmode="Heap", bound=None)
+    while(True):
+        for l in [4, 5, 6, 7]:
+            run_path_example(n=20, l=l, k=1000, PQmode="Heap", bound=None)
+            run_cycle_example(n=20, l=l, k=1000, PQmode="Heap", bound=None)
 
 
 

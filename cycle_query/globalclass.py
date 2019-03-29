@@ -72,7 +72,8 @@ class PEI_path():
             print "empty path considered? Please double check..."
             return None
         if cur_frontier not in sortedmap:
-
+            if join_key not in prev2heap:
+                return None
             # pop from the corresponding heap -- if heap is empty return None.
             heap = prev2heap[join_key]
             if len(heap) == 0:
@@ -179,7 +180,8 @@ class PEI_cycle():
             print "empty path considered? Please double check..."
             return None
         if cur_frontier not in sortedmap:
-
+            if join_key not in prev2heap:
+                return None
             # pop from the corresponding heap -- if heap is empty return None.
             heap = prev2heap[join_key]
             if len(heap) == 0:
@@ -301,6 +303,8 @@ class PEI_lightcycle(PEI_cycle):
             res.bigmerge(succ_i2, I2_list2wgt[succ_i2])
             return res
         else:
+            if self.i2 not in bp2heap:
+                return None
             heap = bp2heap[self.i2]
             if len(heap) == 0:
                 return None
