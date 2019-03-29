@@ -473,6 +473,9 @@ def Deepak_sort_cycle_lazy(tuple2rem, breakpoints, tuple2weight, rel2tuple, l):
         res[k] = localdict
 
     # key2list maps a join key to a heap that you can heappop from.
+    #for key in res:
+    #    assert key in key2list
+
     return res, key2list
 
 
@@ -987,6 +990,7 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, Lazy,
     prev2heap = None
     bp2heap = None
     prev2sortedmaps = []
+    prev2heaps = []
 
 
 
@@ -1004,6 +1008,7 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, Lazy,
             if debug:
                 assert type(prev2sortedmap) == dict
             prev2sortedmaps.append(prev2sortedmap)
+            prev2heaps.append(prev2heap)
         else:
             tuple2rem, PQ = priority_search_l_cycle_naive_init(rotated_subdatabase, tuple2weight, bp_set, bptu2down_neis, l, Deepak, Lazy, PQmode, bound)
         small_PQ_list.append(PQ)  # small_PQ_list[i] is i-th partition's local PQ.
@@ -1048,6 +1053,7 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, Lazy,
         if top_pos != l :  # regular partition
             if Deepak:
                 prev2sortedmap = prev2sortedmaps[top_pos]
+                prev2heap = prev2heaps[top_pos]
             next_result = priority_search_l_cycle_naive_next \
                 (tuple2weight, tu2down_neis_list[top_pos], l, small_PQ_list[top_pos], tuple2rem_list[top_pos],
                  prev2sortedmap, prev2heap, Deepak, Lazy)
@@ -1162,7 +1168,7 @@ def run_path_example(n, l, k, PQmode, bound):
     print "PATH algo: any-k max"
     TOP_K_max, time_for_each_max = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= False, Lazy= False, PQmode = PQmode, bound = bound, debug = True)
     print "PATH algo: any-k lazy"
-    TOP_K_max, time_for_each_max = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak=False,
+    TOP_K_max, time_for_each_max = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak=True,
                                                           Lazy=True, PQmode=PQmode, bound=bound, debug=True)
     print "PATH algo: enumerate all"
     sorted_values = path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis, k, l, debug = True)
@@ -1195,7 +1201,7 @@ def run_cycle_example(n, l, k, PQmode, bound):
     for PEI in TOP_K_max:
         print PEI.wgt
     print "Cycle algo: any-k lazy"
-    TOP_K_lazy, time_for_each_lazy = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=False,
+    TOP_K_lazy, time_for_each_lazy = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True,
                                                                        Lazy=True, PQmode=PQmode, bound=bound,
                                                                        debug=True)
     for PEI in TOP_K_max:
@@ -1207,6 +1213,9 @@ def run_cycle_example(n, l, k, PQmode, bound):
     ## Verify results
     if len(TOP_K_max) != len(TOP_K_sort): 
         print "== Error (Cycle)!!! Not the same length!"
+
+    print len(TOP_K_sort)
+    print len(TOP_K_lazy)
     assert len(TOP_K_lazy) == len(TOP_K_sort)
     assert len(time_for_each_lazy) == len(time_for_each_sort)
 
@@ -1233,7 +1242,7 @@ if __name__ == "__main__":
     #test_correctness()
     while(True):
         for l in [5, 6, 7]:
-            run_path_example(n=100, l=l, k=100000, PQmode="Heap", bound=None)
+            #run_path_example(n=100, l=l, k=100000, PQmode="Heap", bound=None)
             run_cycle_example(n=100, l=l, k=100000, PQmode="Heap", bound=None)
 
 

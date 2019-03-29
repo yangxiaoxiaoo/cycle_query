@@ -165,11 +165,16 @@ class PEI_cycle():
         return (new_tuple, self.breakpoint) in tuple2rem
 
     def lazy_successor(self, prev2sortedmap, prev2heap, tuple2weight, tuple2rem):
+
+        # debug:
+        #for key in prev2sortedmap:
+        #    assert key in prev2heap
+
         # lazy sort:
         # when retrieve from sortedmap is not successful, pop from heap and populate
         frontier = self.instance.frontier()
         assert self is not None
-        join_key = (self.instance.length - 1 ,frontier[0], self.breakpoint)
+        join_key = (self.instance.length - 1, frontier[0], self.breakpoint)
         if join_key not in prev2sortedmap:
              return None
         sortedmap = prev2sortedmap[join_key]
@@ -178,10 +183,12 @@ class PEI_cycle():
 
         if cur_frontier is None:  # empty path cannot be popped.
             print "empty path considered? Please double check..."
+            #assert False
             return None
         if cur_frontier not in sortedmap:
 
             if join_key not in prev2heap:
+                #assert False
                 return None
             # pop from the corresponding heap -- if heap is empty return None.
             heap = prev2heap[join_key]
