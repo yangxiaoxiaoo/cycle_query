@@ -171,7 +171,7 @@ class PEI_cycle():
         assert self is not None
         join_key = (self.instance.length - 1 ,frontier[0], self.breakpoint)
         if join_key not in prev2sortedmap:
-            return None
+             return None
         sortedmap = prev2sortedmap[join_key]
         res = copy.deepcopy(self)
         cur_frontier = res.instance.popfront()
@@ -180,6 +180,7 @@ class PEI_cycle():
             print "empty path considered? Please double check..."
             return None
         if cur_frontier not in sortedmap:
+
             if join_key not in prev2heap:
                 return None
             # pop from the corresponding heap -- if heap is empty return None.

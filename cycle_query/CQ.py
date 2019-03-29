@@ -1195,7 +1195,7 @@ def run_cycle_example(n, l, k, PQmode, bound):
     for PEI in TOP_K_max:
         print PEI.wgt
     print "Cycle algo: any-k lazy"
-    TOP_K_max, time_for_each_max = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=False,
+    TOP_K_lazy, time_for_each_lazy = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=False,
                                                                        Lazy=True, PQmode=PQmode, bound=bound,
                                                                        debug=True)
     for PEI in TOP_K_max:
@@ -1207,6 +1207,9 @@ def run_cycle_example(n, l, k, PQmode, bound):
     ## Verify results
     if len(TOP_K_max) != len(TOP_K_sort): 
         print "== Error (Cycle)!!! Not the same length!"
+    assert len(TOP_K_lazy) == len(TOP_K_sort)
+    assert len(time_for_each_lazy) == len(time_for_each_sort)
+
     for i in range(len(TOP_K_max)):
         print TOP_K_max[i].wgt
         print TOP_K_sort[i].wgt
@@ -1229,9 +1232,9 @@ if __name__ == "__main__":
 
     #test_correctness()
     while(True):
-        for l in [4, 5, 6, 7]:
-            run_path_example(n=20, l=l, k=1000, PQmode="Heap", bound=None)
-            run_cycle_example(n=20, l=l, k=1000, PQmode="Heap", bound=None)
+        for l in [5, 6, 7]:
+            run_path_example(n=100, l=l, k=100000, PQmode="Heap", bound=None)
+            run_cycle_example(n=100, l=l, k=100000, PQmode="Heap", bound=None)
 
 
 
