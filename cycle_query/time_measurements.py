@@ -12,7 +12,7 @@ def measure_time_l_path(n, l, cycle_or_not):
     DensityOfEdges = "Full"
     edgeDistribution = "HardCase"
     rel2tuple, tuple2weight = DataGenerator.getDatabase \
-        (queryType, n, l, DensityOfEdges, edgeDistribution, 2)
+        (queryType, n, l, DensityOfEdges, edgeDistribution)
 
 
     k = 9999999999
@@ -162,7 +162,7 @@ def measure_time_n_v2(n_start, n_end, l, cycle_or_not):
         DensityOfEdges = "Full"
         edgeDistribution = "HardCase"
         rel2tuple, tuple2weight = DataGenerator.getDatabase\
-            (queryType, n, l, DensityOfEdges, edgeDistribution, 1)
+            (queryType, n, l, DensityOfEdges, edgeDistribution)
 
         t_start = timeit.default_timer()
         tu2down_neis, tu2up_neis = CQ.cycle_SJ_reduce_l_light(rel2tuple, l)

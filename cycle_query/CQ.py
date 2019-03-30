@@ -1161,7 +1161,7 @@ def test_correctness():
 def run_path_example(n, l, k, PQmode, bound):
     import DataGenerator
 
-    rel2tuple, tuple2weight = DataGenerator.getDatabase("Path", n, l, "Full", "HardCase", 2)
+    rel2tuple, tuple2weight = DataGenerator.getDatabase("Path", n, l, "Full", "HardCase")
     tu2down_neis, tu2up_neis = path_SJ_reduce_l(rel2tuple, l)
     print "PATH algo: any-k sort"
     TOP_K_sort, time_for_each_sort = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= True, Lazy= False, PQmode = PQmode, bound = bound, debug = True)
@@ -1173,6 +1173,9 @@ def run_path_example(n, l, k, PQmode, bound):
     print "PATH algo: enumerate all"
     sorted_values = path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis, k, l, debug = True)
 
+    for PEI in TOP_K_max:
+        print PEI.wgt
+        
     ## Verify results
     if len(TOP_K_max) != len(TOP_K_sort): 
         print "== Error (Path)!!! Not the same length!"
@@ -1190,7 +1193,7 @@ def run_path_example(n, l, k, PQmode, bound):
 def run_cycle_example(n, l, k, PQmode, bound):
     import DataGenerator
 
-    rel2tuple, tuple2weight = DataGenerator.getDatabase("Cycle", n, l, "Full", "HardCase", 2)
+    rel2tuple, tuple2weight = DataGenerator.getDatabase("Cycle", n, l, "Full", "Random")
     tu2down_neis, tu2up_neis = cycle_SJ_reduce_l_light(rel2tuple, l)
     print "Cycle algo: any-k sort"
     TOP_K_sort, time_for_each_sort = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, Lazy=False,PQmode= PQmode, bound = bound, debug = True)
@@ -1204,35 +1207,31 @@ def run_cycle_example(n, l, k, PQmode, bound):
     TOP_K_lazy, time_for_each_lazy = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True,
                                                                        Lazy=True, PQmode=PQmode, bound=bound,
                                                                        debug=True)
-    for PEI in TOP_K_max:
-        print PEI.wgt
 
     print "Cycle algo: enumerate all"
     results, sorted_values = cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l, False, debug= True)
  
     ## Verify results
-    if len(TOP_K_max) != len(TOP_K_sort): 
-        print "== Error (Cycle)!!! Not the same length!"
-
-    print len(TOP_K_sort)
-    print len(TOP_K_lazy)
+    assert len(TOP_K_lazy) == len(TOP_K_max)
     assert len(TOP_K_lazy) == len(TOP_K_sort)
+    assert len(TOP_K_lazy) == len(results)
     assert len(time_for_each_lazy) == len(time_for_each_sort)
+    assert len(time_for_each_lazy) == len(time_for_each_max)
 
     for i in range(len(TOP_K_max)):
-        print TOP_K_max[i].wgt
-        print TOP_K_sort[i].wgt
         assert format(TOP_K_max[i].wgt, '.4f') == format(TOP_K_sort[i].wgt, '.4f')
         if not TOP_K_max[i].same_as(TOP_K_sort[i]):
             print "== Error (Cycle)!!! Sort and max different results!"
-
-    if len(TOP_K_max) != min(k, len(sorted_values)):
-        print "== Error (Cycle)!!! FE produces different amount of results!"
 
     for i in range(len(TOP_K_max)):
         assert format(TOP_K_max[i].wgt, '.4f') == format(sorted_values[i], '.4f')
         if format(TOP_K_max[i].wgt, '.4f') != format(sorted_values[i], '.4f'):
             print "== Error (Cycle)!!! " + str(TOP_K_max[i].wgt) + " different than " + str(sorted_values[i])
+
+    for i in range(len(TOP_K_max)):
+        assert format(TOP_K_max[i].wgt, '.4f') == format(TOP_K_lazy[i].wgt, '.4f')
+        if not TOP_K_max[i].same_as(TOP_K_lazy[i]):
+            print "== Error (Cycle)!!! Sort and max different results!"
 
 if __name__ == "__main__":
     l_path_sim(4, 5, PQmode="Heap", bound=5)
@@ -1241,9 +1240,9 @@ if __name__ == "__main__":
 
     #test_correctness()
     while(True):
-        for l in [5, 6, 7]:
+        for l in [5]:
             #run_path_example(n=100, l=l, k=100000, PQmode="Heap", bound=None)
-            run_cycle_example(n=100, l=l, k=100000, PQmode="Heap", bound=None)
+            run_cycle_example(n=50, l=l, k=100000, PQmode="Heap", bound=None)
 
 
 

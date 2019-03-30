@@ -23,7 +23,6 @@ def parse_args():
 	parser.add_argument('-l', action="store", dest="length", default=4, type=int, help="Length of Path or Cycle")
 	parser.add_argument('-c', action="store", dest="relationCardinality", choices={"Full", "Random"}, default="Full", help="\"Full\"=Maximum possible cardinality for relations|\"Random\"=Random cardinality for each relation")
 	parser.add_argument('-p', action="store", dest="connectionPattern", default="Random", help="\"HardCase\"=Fanout:1->max->1->...|\"Random\"=Edges are decided by uniform sampling|\"Int\"=Uniform random/bound with a maximum degree")
-	parser.add_argument('-u', action="store", dest="unionOfDatabases", default=1, type=int, help="By setting this option, the result will be the union of that many sub-databases (Useful for the Hard Case where it will alternate the fanout across databases)")
 	parser.add_argument('--v', action="store_true", dest='verbose', default=False, help="Print attributes and Relations to STDIN")
 
 	arg_results = parser.parse_args()
@@ -33,10 +32,9 @@ def parse_args():
 	length = arg_results.length
 	relationCardinality = arg_results.relationCardinality
 	connectionPattern = arg_results.connectionPattern
-	databasesNo = arg_results.unionOfDatabases
 	verbose = arg_results.verbose
 
-	return outFile, queryType, n, length, relationCardinality, connectionPattern, databasesNo, verbose
+	return outFile, queryType, n, length, relationCardinality, connectionPattern, verbose
 
 ## -- For printing
 def printAttributes(attributeList):
@@ -86,13 +84,16 @@ def save_to_file(outFile, relation2tuple, tuple2weight):
 
 ##-- Main class
 class MainGenerator:
-	def __init__(self, queryType, n, length, relationCardinality, connectionPattern, databasesNo, verbose = False):
+	def __init__(self, queryType, n, length, relationCardinality, connectionPattern, verbose = False):
 		self.queryType = queryType
 		self.n = n
 		self.length = length
 		self.relationCardinality = relationCardinality
 		self.connectionPattern = connectionPattern
-		self.databasesNo = databasesNo
+		if connectionPattern == "HardCase":
+			self.databasesNo = 2
+		else
+			self.databasesNo = 1
 		self.verbose = verbose
 		## -- Initialize
 		self.value_counter = 0   ## Used for counting, we dont want to repeat a value
@@ -250,20 +251,20 @@ class MainGenerator:
 
 ##-- Use this function as an interface when calling from another program
 ##-- Instantiates an object, calls its driver function and returns the result
-def getDatabase(queryType, n, length, relationCardinality, connectionPattern, databasesNo):
+def getDatabase(queryType, n, length, relationCardinality, connectionPattern):
 	if connectionPattern != "Random" and connectionPattern != "HardCase":
 		connectionPattern = int(connectionPattern)
-		if (connectionPattern > (n / databasesNo)):
-			print "if -c argument is used as an integer, it must be <= n / databasesNo"
+		if (connectionPattern > n):
+			print "if -c argument is used as an integer, it must be <= n"
 			sys.exit(1)
 
-	gen = MainGenerator(queryType, n, length, relationCardinality, connectionPattern, databasesNo)
+	gen = MainGenerator(queryType, n, length, relationCardinality, connectionPattern)
 	relation2tuple, tuple2weight = gen.build_database()
 	return relation2tuple, tuple2weight
 
 if __name__ == "__main__":
-	outFile, queryType, n, length, relationCardinality, connectionPattern, databasesNo, verbose = parse_args()
-	gen = MainGenerator(queryType, n, length, relationCardinality, connectionPattern, databasesNo, verbose)
+	outFile, queryType, n, length, relationCardinality, connectionPattern, verbose = parse_args()
+	gen = MainGenerator(queryType, n, length, relationCardinality, connectionPattern, verbose)
 	relation2tuple, tuple2weight = gen.build_database()
 	if verbose: printAttributes(gen.attributeList)
 	if verbose: printRelations(relation2tuple)
