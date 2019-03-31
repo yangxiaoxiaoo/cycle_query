@@ -92,7 +92,7 @@ class MainGenerator:
 		self.connectionPattern = connectionPattern
 		if connectionPattern == "HardCase":
 			self.databasesNo = 2
-		else
+		else:
 			self.databasesNo = 1
 		self.verbose = verbose
 		## -- Initialize
@@ -100,8 +100,8 @@ class MainGenerator:
 		self.relation2tuple = dict() # Hold the relations
 		for i in range(length): self.relation2tuple["R" + str(i)] = set()    # Initialize relations
 		self.tuple2weight = dict()   ## Holds the weights of tuples
-		self.edgesForEachDatabase = [n / databasesNo] * databasesNo
-		self.edgesForEachDatabase[0] += n % databasesNo
+		self.edgesForEachDatabase = [n / self.databasesNo] * self.databasesNo
+		self.edgesForEachDatabase[0] += n % self.databasesNo
 		if verbose:
 			self.attributeList = []
 			attribute_no = length if queryType == "Cycle" else length + 1
