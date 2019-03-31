@@ -261,6 +261,7 @@ def simple_join(rel2tuple, tuple2weight, tu2down_neis, start, end):
 
 
 def priority_search_l_cycle_light_init(rel2tuple, tuple2weight, tu2down_neis, l, Deepak, Lazy, PQmode, bound):
+
     #print rel2tuple
     # compute a set of I1_list, a set of I2_list
     # for each I1_list, the max I2_list weight for it, a list of all matching I2_list
@@ -292,7 +293,8 @@ def priority_search_l_cycle_light_init(rel2tuple, tuple2weight, tu2down_neis, l,
     # print PQ
     if not Deepak:
         bp2sortedmap = dict()
-        return bp2sortedmap, breakpoints2I2, I2_list2wgt, PQ
+        key2list = dict()
+        return bp2sortedmap, key2list, breakpoints2I2, I2_list2wgt, PQ
     else:
         key2list = dict()
         bp2sortedmap = dict()
@@ -300,24 +302,37 @@ def priority_search_l_cycle_light_init(rel2tuple, tuple2weight, tu2down_neis, l,
             key2list[bp] = []
             for i2 in breakpoints2I2[bp]:
                 key2list[bp].append((I2_list2wgt[i2], i2))
+
+        assert len(key2list) == len(breakpoints2I2)
+
         for k in key2list:
             localdict = dict()
             list = key2list[k]
             if Lazy:
                 heapq.heapify(list)
+                if len(list) != 0:
+                    localdict['#'] = list[0][1]
+                    heapq.heappop(list)
+
             else:
                 list.sort()
-            if len(list) != 0:
-                localdict['#'] = list[0][1]
-                if not Lazy:
+                if len(list) != 0:
+                    localdict['#'] = list[0][1]
                     for i in range(len(list) - 1):
                         localdict[list[i][1]] = list[i + 1][1]
+
             bp2sortedmap[k] = localdict
+
+        assert len(bp2sortedmap) == len(breakpoints2I2)
+
         return bp2sortedmap, key2list, breakpoints2I2, I2_list2wgt, PQ
 
 
 
 def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, PQ, bp2sortedmap, bp2heap, Deepak, Lazy):
+
+    if PQ.size() == 0:
+        return None
     while PQ.size() != 0:
         (cur_PEI_cycle, _) = PQ.pop_min()
         if Deepak:
@@ -335,9 +350,11 @@ def priority_search_l_cycle_light_next(breakpoints2I2, I2_list2wgt, PQ, bp2sorte
                 if successor_PEI_cycle is not None:
                     PQ.add((successor_PEI_cycle, None))
                 return cur_PEI_cycle
+
             cur_PEI_cycle.bigexpand(breakpoints2I2, I2_list2wgt, bp2sortedmap)
             if not cur_PEI_cycle:
-                continue
+                assert False
+                #continue
             assert cur_PEI_cycle.instance.completion
             if Lazy:
                 successor_PEI_cycle = cur_PEI_cycle.bigsucc_lazy(breakpoints2I2, I2_list2wgt, bp2sortedmap, bp2heap)
@@ -404,13 +421,6 @@ def Deepak_sort_cycle(tuple2rem, breakpoints, tuple2weight, rel2tuple, l):
         for i in range(l-1, -1, -1):
 
             relation = 'R' + str(i)
-            #if i == l-1:
-            #    for t in rel2tuple[relation]:
-            #        if t[1] == bp:
-            #            if (i, t[0], t[1]) in key2list:
-            #                key2list[i, t[0], t[1]].append((tuple2weight[t], t))
-            #            else:
-            #                key2list[i, t[0], t[1]] = [(tuple2weight[t], t)]
 
             if True:
                 for t in rel2tuple[relation]:
@@ -473,8 +483,8 @@ def Deepak_sort_cycle_lazy(tuple2rem, breakpoints, tuple2weight, rel2tuple, l):
         res[k] = localdict
 
     # key2list maps a join key to a heap that you can heappop from.
-    #for key in res:
-    #    assert key in key2list
+    for key in res:
+        assert key in key2list
 
     return res, key2list
 
@@ -1016,12 +1026,10 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, Lazy,
 
     # all light case
     tu2down_neis, tu2up_neis = cycle_SJ_reduce_l_light(partitions[l], l)
-    if Deepak:
-        bp2sortedmap, bp2heap, breakpoints2I2, I2_list2wgt, PQ = \
+
+    bp2sortedmap, bp2heap, breakpoints2I2, I2_list2wgt, PQ = \
             priority_search_l_cycle_light_init(partitions[l], tuple2weight, tu2down_neis, l, Deepak, Lazy, PQmode, bound)
-    else:
-        bp2sortedmap, breakpoints2I2, I2_list2wgt, PQ = \
-            priority_search_l_cycle_light_init(partitions[l], tuple2weight, tu2down_neis, l, Deepak, Lazy, PQmode, bound)
+
     small_PQ_list.append(PQ)
 
     # start global search
@@ -1161,21 +1169,29 @@ def test_correctness():
 def run_path_example(n, l, k, PQmode, bound):
     import DataGenerator
 
-    rel2tuple, tuple2weight = DataGenerator.getDatabase("Path", n, l, "Full", "HardCase")
+    rel2tuple, tuple2weight = DataGenerator.getDatabase("Path", n, l, "Full", "Random")
     tu2down_neis, tu2up_neis = path_SJ_reduce_l(rel2tuple, l)
     print "PATH algo: any-k sort"
     TOP_K_sort, time_for_each_sort = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= True, Lazy= False, PQmode = PQmode, bound = bound, debug = True)
     print "PATH algo: any-k max"
     TOP_K_max, time_for_each_max = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= False, Lazy= False, PQmode = PQmode, bound = bound, debug = True)
     print "PATH algo: any-k lazy"
-    TOP_K_max, time_for_each_max = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak=True,
+    TOP_K_lazy, time_for_each_lazy = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak=True,
                                                           Lazy=True, PQmode=PQmode, bound=bound, debug=True)
     print "PATH algo: enumerate all"
     sorted_values = path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis, k, l, debug = True)
 
     for PEI in TOP_K_max:
         print PEI.wgt
-        
+
+    print len(TOP_K_lazy)
+    print len(TOP_K_max)
+    print len(TOP_K_sort)
+    print len(sorted_values)
+    assert len(TOP_K_lazy) == len(TOP_K_max)
+    assert len(TOP_K_lazy) == len(TOP_K_sort)
+    assert len(TOP_K_lazy) == len(sorted_values)
+
     ## Verify results
     if len(TOP_K_max) != len(TOP_K_sort): 
         print "== Error (Path)!!! Not the same length!"
@@ -1212,6 +1228,10 @@ def run_cycle_example(n, l, k, PQmode, bound):
     results, sorted_values = cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l, False, debug= True)
  
     ## Verify results
+    print len(TOP_K_lazy)
+    print len(TOP_K_max)
+    print len(TOP_K_sort)
+    #print len(results)
     assert len(TOP_K_lazy) == len(TOP_K_max)
     assert len(TOP_K_lazy) == len(TOP_K_sort)
     assert len(TOP_K_lazy) == len(results)
@@ -1240,9 +1260,9 @@ if __name__ == "__main__":
 
     #test_correctness()
     while(True):
-        for l in [5]:
-            #run_path_example(n=100, l=l, k=100000, PQmode="Heap", bound=None)
-            run_cycle_example(n=50, l=l, k=100000, PQmode="Heap", bound=None)
+        for l in [4, 5]:
+            run_path_example(n=15, l=l, k=100000, PQmode="Heap", bound=None)
+            run_cycle_example(n=15, l=l, k=100000, PQmode="Heap", bound=None)
 
 
 

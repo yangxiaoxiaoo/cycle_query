@@ -167,8 +167,8 @@ class PEI_cycle():
     def lazy_successor(self, prev2sortedmap, prev2heap, tuple2weight, tuple2rem):
 
         # debug:
-        #for key in prev2sortedmap:
-        #    assert key in prev2heap
+        for key in prev2sortedmap:
+            assert key in prev2heap
 
         # lazy sort:
         # when retrieve from sortedmap is not successful, pop from heap and populate
@@ -291,29 +291,41 @@ class PEI_lightcycle(PEI_cycle):
         assert self.instance.completion
 
     def bigsucc(self, breakpoints2I2, I2_list2wgt, bp2sortedmap):
+
         sortedmap = bp2sortedmap[self.breakpointpair]
         res = PEI_lightcycle(self.i1[0], 0, 0, self.goal_length)
         res.biginit(self.i1, self.i1_wgt, self.i1_hrtc, self.goal_length)
+
+
+
         if self.i2 in sortedmap:
+
             succ_i2 = sortedmap[self.i2]
             res.bigmerge(succ_i2, I2_list2wgt[succ_i2])
+
             return res
         else:
+            #print sortedmap
+            #assert len(sortedmap) == 1
             return None
 
     def bigsucc_lazy(self, breakpoints2I2, I2_list2wgt, bp2sortedmap, bp2heap):
 
+        #debug
+        #for key in bp2sortedmap:
+        #    assert key in bp2heap
+
         sortedmap = bp2sortedmap[self.breakpointpair]
         res = PEI_lightcycle(self.i1[0], 0, 0, self.goal_length)
         res.biginit(self.i1, self.i1_wgt, self.i1_hrtc, self.goal_length)
+
         if self.i2 in sortedmap:
             succ_i2 = sortedmap[self.i2]
             res.bigmerge(succ_i2, I2_list2wgt[succ_i2])
             return res
         else:
-            if self.i2 not in bp2heap:
-                return None
-            heap = bp2heap[self.i2]
+            assert self.breakpointpair in bp2heap
+            heap = bp2heap[self.breakpointpair]
             if len(heap) == 0:
                 return None
             else:
@@ -325,6 +337,10 @@ class PEI_lightcycle(PEI_cycle):
 
 
     def bigexpand(self, breakpoints2I2, I2_list2wgt, bp2sortedmap):
+        #debug
+        #for key in breakpoints2I2:
+        #    assert key in bp2sortedmap
+
         if self.breakpointpair not in bp2sortedmap:
             return None
         sortedmap = bp2sortedmap[self.breakpointpair]
