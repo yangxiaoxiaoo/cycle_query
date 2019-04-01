@@ -758,10 +758,315 @@ def plot(mode, target, target_l):
         plt.show()
 
 
-def plot_lower4():
-    pass
-#TODO: add plot for lower 4
+def plot_lower4(mode, target, target_l):
 
+    l2_any_k_time_cycle = []
+    l2_any_k_TTF_cycle = []
+    l2_any_k_average_time_cycle = []
+    l2_full_time_cycle = []
+    l2_any_k_time_path = []
+    l2_any_k_TTF_path = []
+    l2_any_k_average_time_path = []
+    l2_full_time_path = []
+
+    l2_any_k_time_cycle_old = []
+    l2_any_k_TTF_cycle_old = []
+    l2_any_k_time_path_old = []
+    l2_any_k_TTF_path_old = []
+
+    l2_any_k_time_cycle_lazy = []
+    l2_any_k_TTF_cycle_lazy = []
+    l2_any_k_time_path_lazy = []
+    l2_any_k_TTF_path_lazy = []
+
+    l2_boolean_path = []
+    l2_boolean_cycle = []
+    l2_top1_path = []
+    l2_top1_cycle = []
+
+    l_values_cycle = []
+    l_values_path = []
+
+
+    n2_any_k_time_cycle = []
+    n2_any_k_TTF_cycle = []
+    n2_any_k_average_time_cycle = []
+    n2_full_time_cycle = []
+    n2_any_k_time_path = []
+    n2_any_k_TTF_path = []
+    n2_any_k_average_time_path = []
+    n2_full_time_path = []
+
+    n2_any_k_time_cycle_old = []
+    n2_any_k_TTF_cycle_old = []
+    n2_any_k_time_path_old = []
+    n2_any_k_TTF_path_old = []
+
+    n2_any_k_time_cycle_lazy = []
+    n2_any_k_TTF_cycle_lazy = []
+    n2_any_k_time_path_lazy = []
+    n2_any_k_TTF_path_lazy = []
+
+    n2_boolean_path = []
+    n2_boolean_cycle = []
+    n2_top1_path = []
+    n2_top1_cycle = []
+
+    n_values_cycle = []
+    n_values_path = []
+    for f in sorted(listdir('../time_any')):
+        if isfile(join('../time_any', f)) and isfile(join('../time_old', f)) and not isfile(join('../time_all', f)) and isfile(join('../time_lazy', f)) and isfile(join('../time_bool', f)):
+            time_for_each = pickle.load(open(join('../time_any', f),'rb'))
+            time_for_each_old = pickle.load(open(join('../time_old', f),'rb'))
+            time_for_each_lazy = pickle.load(open(join('../time_lazy', f), 'rb'))
+            timetuple_bool = pickle.load(open(join('../time_bool', f), 'rb'))
+            n = int(f.split('_')[0])
+            l = int(f.split('_')[1])
+            cycle_or_not =  f.split('_')[2] == 'cycle'
+            time_for_all = []
+            time_bool = []
+            time_top1 = []
+            results_count = []
+            time_till_now = []
+            time_till_now_old = []
+            time_till_now_lazy = []
+            accumulated_time = 0
+            accumulated_time_old = 0 # not deepak improved
+            accumulated_time_lazy = 0
+            if n == 5 and mode != 2:
+                print "another measurment "
+                continue
+            if len(time_for_each) == 0:
+                print "no result for this query"
+                continue
+
+            for i in range(len(time_for_each)):
+                time_till_now.append(time_for_each[i] + accumulated_time)
+                time_till_now_old.append(time_for_each_old[i] + accumulated_time_old)
+                time_till_now_lazy.append(time_for_each_lazy[i] + accumulated_time_lazy)
+
+                accumulated_time = time_for_each[i] + accumulated_time
+                accumulated_time_old = time_for_each_old[i] + accumulated_time_old
+                accumulated_time_lazy = time_for_each_lazy[i] + accumulated_time_lazy
+
+                results_count.append(i+1)
+                time_bool.append(timetuple_bool[0])
+                time_top1.append(timetuple_bool[1])
+
+            if n == target:
+                if cycle_or_not:
+                    l2_any_k_TTF_cycle_lazy.append(time_for_each_lazy[0])
+                    l2_any_k_time_cycle_lazy.append(accumulated_time_lazy)
+                    l2_any_k_TTF_cycle.append(time_for_each[0])
+                    l2_any_k_time_cycle.append(accumulated_time)
+                    l2_any_k_TTF_cycle_old.append(time_for_each_old[0])
+                    l2_any_k_time_cycle_old.append(accumulated_time_old)
+                    l2_any_k_average_time_cycle.append(accumulated_time/len(time_for_each))
+
+                    l2_boolean_cycle.append(timetuple_bool[0])
+                    l2_top1_cycle.append(timetuple_bool[1])
+                    l_values_cycle.append(l)
+                else:
+                    l2_any_k_TTF_path_lazy.append(time_for_each_lazy[0])
+                    l2_any_k_time_path_lazy.append(accumulated_time_lazy)
+                    l2_any_k_TTF_path.append(time_for_each[0])
+                    l2_any_k_time_path.append(accumulated_time)
+                    l2_any_k_TTF_path_old.append(time_for_each_old[0])
+                    l2_any_k_time_path_old.append(accumulated_time_old)
+                    l2_any_k_average_time_path.append(accumulated_time/len(time_for_each))
+
+                    l2_boolean_path.append(timetuple_bool[0])
+                    l2_top1_path.append(timetuple_bool[1])
+                    l_values_path.append(l)
+
+            if l == target_l:
+                if cycle_or_not:
+                    n2_any_k_TTF_cycle_lazy.append(time_for_each_lazy[0])
+                    n2_any_k_time_cycle_lazy.append(accumulated_time_lazy)
+                    n2_any_k_TTF_cycle.append(time_for_each[0])
+                    n2_any_k_time_cycle.append(accumulated_time)
+                    n2_any_k_TTF_cycle_old.append(time_for_each_old[0])
+                    n2_any_k_time_cycle_old.append(accumulated_time_old)
+                    n2_any_k_average_time_cycle.append(accumulated_time/len(time_for_each))
+
+                    n2_boolean_cycle.append(timetuple_bool[0])
+                    n2_top1_cycle.append(timetuple_bool[1])
+                    n_values_cycle.append(n)
+                else:
+                    n2_any_k_TTF_path_lazy.append(time_for_each_lazy[0])
+                    n2_any_k_time_path_lazy.append(accumulated_time_lazy)
+                    n2_any_k_TTF_path.append(time_for_each[0])
+                    n2_any_k_time_path.append(accumulated_time)
+                    n2_any_k_TTF_path_old.append(time_for_each_old[0])
+                    n2_any_k_time_path_old.append(accumulated_time_old)
+                    n2_any_k_average_time_path.append(accumulated_time/len(time_for_each))
+
+                    n2_boolean_path.append(timetuple_bool[0])
+                    n2_top1_path.append(timetuple_bool[1])
+                    n_values_path.append(n)
+
+
+            if mode == 1:
+                #plt.plot(time_till_now, results_count, 'r--', time_till_now, results_count, 'b--')
+                results_count_k = np.true_divide(results_count, 1000)
+                line_1, = plt.plot(time_till_now, results_count_k, 'r', label='line 1')
+                line_2, = plt.plot(time_for_all, results_count_k, 'b', label='Line 2')
+                line_3, = plt.plot(time_till_now_old, results_count_k, 'g', label='Line 3')
+
+                plt.legend([line_1, line_2, line_3], ['any-k sort', 'full ranking', 'any-k max'])
+                if cycle_or_not:
+                    plt.title('N = '+ str(n) + ', l = ' + str(l) + ', cycle')
+                else:
+                    plt.title('N = ' + str(n) + ', l = ' + str(l) + ', path')
+                plt.ylabel('number of results (Thousands)')
+                plt.xlabel('time (seconds)')
+                plt.show()
+
+    if mode == 2:
+        # plot how computational time for different l changes on the same database:
+        plt.xlabel('query length')
+        plt.ylabel('time (seconds)')
+        plt.yscale('log')
+        plt.xscale('log')
+
+        line_1_, = plt.plot(l_values_cycle, l2_any_k_TTF_cycle, '^', color='g',label='line 1_')
+        line_3_, = plt.plot(l_values_cycle, l2_any_k_TTF_cycle_old, '+', color='m',label='line 3_')
+
+
+        compare1 = l_values_cycle
+        compare1 = np.true_divide(compare1, 20) - 10/20
+        compare2 = np.power(compare1, 2)
+        compare2 = [x for _, x in sorted(zip(l_values_cycle, compare2))]
+        compare1 = [x for _, x in sorted(zip(l_values_cycle, compare1))]
+
+
+        line_4, = plt.plot(sorted(l_values_cycle), compare1, '--', color='r',label='line 4')
+        line_5, = plt.plot(sorted(l_values_cycle), compare2, '--', color='gold', label='line 5')
+
+        line_6, = plt.plot(l_values_cycle, l2_boolean_cycle, 'D', color='lime',label='line 6')
+        line_7, = plt.plot(l_values_cycle, l2_top1_cycle, 'p',color='brown', label='line 7')
+
+
+        line_9, = plt.plot(l_values_cycle, l2_any_k_TTF_cycle_lazy, '<', color='steelblue', label='line 9')
+
+        labels = [line_3_, line_1_, line_9, line_7, line_4, line_5, line_6]
+        handles = [ 'any-k max TTF', 'any-k sort TTF', 'any-k lazy TTF',
+                   "top-1", "l", "l^2", "boolean"]
+
+        plt.legend(labels, handles)
+        plt.title('Cycle')
+        plt.show()
+
+
+        plt.xlabel('query length')
+        plt.ylabel('time (seconds)')
+        #plt.yscale('log')
+
+
+
+        compare2 = l_values_path
+        compare2 = np.true_divide(compare2, 20000)- 10/2000
+        compare2 = [x for _, x in sorted(zip(l_values_path, compare2))]
+
+
+
+        line_1_, = plt.plot(l_values_path, l2_any_k_TTF_path, '^', color='g',label='line 1_')
+
+        line_3_, = plt.plot(l_values_path, l2_any_k_TTF_path_old, '+',color='m', label='line 3_')
+
+
+
+        line_5, = plt.plot(sorted(l_values_path),  compare2, '--',color='gold', label='line 5')
+        line_6, = plt.plot(l_values_path, l2_boolean_path, 'D', color='lime',label='line 6')
+        line_7, = plt.plot(l_values_path, l2_top1_path, 'p',color='brown', label='line 7')
+
+
+        line_9, = plt.plot(l_values_path, l2_any_k_TTF_path_lazy, '<', color='steelblue', label='line 9')
+
+
+
+        labels = [line_3_, line_1_,line_9, line_7, line_5, line_6]
+        handles = [ 'any-k max TTF', 'any-k sort TTF', 'any-k lazy TTF',
+                   "top-1",  "l", "boolean"]
+
+        plt.legend(labels, handles)
+        plt.title('Path')
+        plt.show()
+
+
+
+    if mode == 3:
+        # plot how computation time for diffrent n on the same query (same l)
+        plt.xlabel('n')
+        plt.ylabel('time (seconds)')
+        plt.yscale('log')
+        plt.xscale('log')
+
+        exp = 2
+        if target_l == 4:
+            exp = 1.5
+
+
+        line_1, = plt.plot(n_values_cycle, n2_any_k_time_cycle, 'x', color='b',label='line 1')
+        line_1_, = plt.plot(n_values_cycle, n2_any_k_TTF_cycle, '^', color='g', label='line 1_')
+        line_2, = plt.plot(n_values_cycle, n2_full_time_cycle, 'o', color='r',label='Line 2')
+        line_3, = plt.plot(n_values_cycle, n2_any_k_time_cycle_old, 's', color='c',label='line 3')
+        line_3_, = plt.plot(n_values_cycle, n2_any_k_TTF_cycle_old, '+', color='m', label='line 3_')
+
+        compare1 = np.power(n_values_cycle, exp)
+        compare1 = np.true_divide(compare1, 10)
+        compare1 = np.multiply(compare1, np.log(compare1))
+        compare1 = [x for _, x in sorted(zip(n_values_cycle, compare1))]
+        compare1 = np.true_divide(compare1, 40000)
+        compare2 = np.power(n_values_cycle, 2)
+        compare2 = np.true_divide(compare2, 10)
+        compare2 = np.multiply(compare2, np.log(compare2))
+        compare2 = np.true_divide(compare2, 50000)
+
+        compare2 = [x for _, x in sorted(zip(n_values_cycle, compare2))]
+
+        line_4, = plt.plot(sorted(n_values_cycle), compare1 , color='y',label='line 4')
+        line_5, = plt.plot(sorted(n_values_cycle), compare2, '--', color='gold',label='line 5')
+
+        line_6, = plt.plot(n_values_cycle, n2_boolean_cycle, 'D', color='lime', label='line 6')
+        line_7, = plt.plot(n_values_cycle, n2_top1_cycle, 'p', color='brown',label='line 7')
+        plt.legend([line_1, line_1_, line_2, line_3, line_3_, line_4, line_5, line_6, line_7],
+                   ['any-k sort TTL', 'any-k sort TTF', 'full ranking TTF/TTL', 'any-k max TTL', 'any-k max TTF', 'n^'+ str(exp)+' log n' , 'n^2 log n',"boolean", "top-1"])
+        plt.title('4-Cycle')
+        plt.show()
+        plt.xlabel('n')
+        plt.ylabel('time (seconds)')
+        plt.yscale('log')
+        plt.xscale('log')
+
+
+        exp = 3  # 4-path...
+        line_1, = plt.plot(n_values_path, n2_any_k_time_path, 'x', label='line 1')
+        line_1_, = plt.plot(n_values_path, n2_any_k_TTF_path, '^', label='line 1_')
+        line_2, = plt.plot(n_values_path, n2_full_time_path, 'o', label='Line 2')
+        line_3, = plt.plot(n_values_path, n2_any_k_time_path_old, 's', label='line 3')
+        line_3_, = plt.plot(n_values_path, n2_any_k_TTF_path_old, '+', label='Line 3_')
+
+        compare1 = np.power(n_values_path, exp)
+
+        compare1 = [x for _, x in sorted(zip(n_values_path, compare1))]
+        compare1 = np.true_divide(compare1, 500000)
+
+        compare2 = np.power(n_values_path, 1)
+        compare2 = np.true_divide(compare2, 5)
+        compare2 = np.multiply(compare2, np.log(compare2))
+        compare2 = [x for _, x in sorted(zip(n_values_path, compare2))]
+        compare2 = np.true_divide(compare2, 5000)
+        line_4, = plt.plot(sorted(n_values_path), compare1, label='line 4')
+        line_5, = plt.plot(sorted(n_values_path), compare2, '--', label='line 5')
+
+        line_6, = plt.plot(n_values_path, n2_boolean_path, 'D', label='line 6')
+        line_7, = plt.plot(n_values_path, n2_top1_path, 'p', label='line 7')
+
+        plt.legend([line_1, line_1_, line_2, line_3, line_3_, line_4, line_5, line_6, line_7],
+                   ['any-k sort TTL', 'any-k sort TTF', 'full ranking TTF/TTL', 'any-k max TTL', 'any-k max TTF', 'n^' + str(exp) + ' log n', 'n log n',"boolean", "top-1"])
+        plt.title('4-Path')
+        plt.show()
 
 if __name__ == "__main__":
     #measure_time_l_path(80, 7, True)
@@ -773,14 +1078,19 @@ if __name__ == "__main__":
     #measure_time_n_v2(3, 50, 4, False) #4-path
     #plot(1, 0, 0) # any-k property.
 
-    n = 10
+    #n = 10
     #measure_time_l(n)
     #add_lazy_l(n, k=999999999)
-    plot(2, n, 0) # l-scalability
+    #plot(2, n, 0) # l-scalability
 
     #l = 4
     #measure_time_n(l)
     #plot(3, 0, l)  # n-scalability
+
+
+    n = 1000
+    #measure_lower4(n)
+    plot_lower4(2, n, 0)
 
 
 
