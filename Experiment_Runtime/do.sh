@@ -2,9 +2,9 @@
 
 mkdir -p plots/RandomCycles/
 hash=$(mktemp -d)
-echo "500 600 700" > ${hash}/3
-echo "50 100 150" > ${hash}/5
-echo "25 50 75" > ${hash}/7
+echo "1000 1250 1500" > ${hash}/3
+echo "250 500 750" > ${hash}/5
+echo "50 75 100" > ${hash}/7
 for l in 3 5 7
 do
 	value=$(< ${hash}/$l)
@@ -31,9 +31,9 @@ done
 
 mkdir -p plots/TwitterCycles/
 hash=$(mktemp -d)
-echo "500 600 700" > ${hash}/3
-echo "150 250 350" > ${hash}/5
-echo "200 225 250" > ${hash}/7
+echo "500 750 1000" > ${hash}/3
+echo "250 350 450" > ${hash}/5
+echo "150 200 250" > ${hash}/7
 for l in 3 5 7
 do
 	value=$(< ${hash}/$l)
@@ -58,9 +58,9 @@ done
 
 mkdir -p plots/RandomPaths/
 hash=$(mktemp -d)
-echo "500 600 700" > ${hash}/3
-echo "50 100 150" > ${hash}/5
-echo "25 50 75" > ${hash}/7
+echo "500 750 1000" > ${hash}/3
+echo "100 200 300" > ${hash}/5
+echo "50 100 150" > ${hash}/7
 for l in 3 5 7
 do
 	value=$(< ${hash}/$l)
