@@ -5,6 +5,130 @@ import numpy as np
 import CQ
 import BooleanTop1
 
+
+def lazy_time_l_path(n, l, cycle_or_not, k):
+    # add datapoints for lazy sort
+    queryType = "Cycle"
+    DensityOfEdges = "Full"
+    edgeDistribution = "HardCase"
+    rel2tuple, tuple2weight = DataGenerator.getDatabase \
+        (queryType, n, l, DensityOfEdges, edgeDistribution)
+
+    if not cycle_or_not:  # path case
+        t_start = timeit.default_timer()
+        tu2down_neis, tu2up_neis = CQ.path_SJ_reduce_l(rel2tuple, l)
+        t_end = timeit.default_timer()
+        t_preprocess = t_end - t_start  # the time_any to preprocess and build the relation maps.
+
+        print "algo: any-k lazy sort"
+        t1 = timeit.default_timer()
+        TOP_K, time_for_each = CQ.priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak=True, Lazy= True,
+                                                         PQmode="Heap", bound=None, debug=False)
+        # modes: "Heap", "Btree", "Treap"
+        # bound=None | k
+        # when debug is True there is prints, otherwise not
+        if len(time_for_each) > 0:
+            time_for_each[0] += t_preprocess
+
+
+
+
+    else:  # cycle
+        t_start = timeit.default_timer()
+        tu2down_neis, tu2up_neis = CQ.path_SJ_reduce_l(rel2tuple, l)
+        t_end = timeit.default_timer()
+        t_preprocess = t_end - t_start  # the time_any to preprocess and build the relation maps.
+
+
+        print "algo: any-k lazy sort"
+        TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, Lazy=True,
+                                                                  PQmode="Heap", bound=None, debug=False)
+
+        if len(time_for_each) > 0:
+            time_for_each[0] += t_preprocess
+
+
+    if cycle_or_not:
+        pickle.dump(time_for_each, open("../time_lazy/" + str(n) + '_' + str(l) + '_cycle', 'wb'))
+    else:
+        pickle.dump(time_for_each, open("../time_lazy/" + str(n) + '_' + str(l) + '_path', 'wb'))
+
+
+
+
+
+def get_time_lower4(n, l, cycle_or_not):
+    # simplest version, takes n and l. Useful version!
+
+    queryType = "Cycle"
+    DensityOfEdges = "Full"
+    edgeDistribution = "HardCase"
+    rel2tuple, tuple2weight = DataGenerator.getDatabase \
+        (queryType, n, l, DensityOfEdges, edgeDistribution)
+
+
+    k = 1
+    if not cycle_or_not:  # path case
+        t_start = timeit.default_timer()
+        tu2down_neis, tu2up_neis = CQ.path_SJ_reduce_l(rel2tuple, l)
+        t_end = timeit.default_timer()
+        t_preprocess = t_end - t_start  # the time_any to preprocess and build the relation maps.
+        print "any-k sort"
+        t1 = timeit.default_timer()
+        TOP_K, time_for_each = CQ.priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= True, Lazy=False, PQmode = "Heap", bound = None, debug = False)
+        #modes: "Heap", "Btree", "Treap"
+        #bound=None | k
+        # when debug is True there is prints, otherwise not
+        if len(time_for_each) > 0:
+            time_for_each[0] += t_preprocess
+        TOP_K, time_for_each_old = CQ.priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak=False,Lazy=False,
+                                                             PQmode="Heap", bound=None, debug=False)
+        if len(time_for_each_old) > 0:
+            time_for_each_old[0] += t_preprocess
+
+        exist, t_bool = BooleanTop1.l_path_bool(rel2tuple,l)
+        Top1, t_top1 = BooleanTop1.l_path_top1(rel2tuple, tuple2weight, tu2down_neis, l)
+        t_top1 += t_preprocess
+
+
+    else:  # cycle
+        t_start = timeit.default_timer()
+        tu2down_neis, tu2up_neis = CQ.path_SJ_reduce_l(rel2tuple, l)
+        t_end = timeit.default_timer()
+        t_preprocess = t_end - t_start  # the time_any to preprocess and build the relation maps.
+
+        # TODO: add any-k naive?
+        print "algo: any-k split version"
+        TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, Lazy=False, PQmode= "Heap", bound = None, debug = False)
+
+        if len(time_for_each) > 0:
+            time_for_each[0] += t_preprocess
+
+        TOP_K, time_for_each_old = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=False, Lazy=False,
+                                                                  PQmode="Heap", bound=None, debug=False)
+
+        if len(time_for_each_old) > 0:
+            time_for_each_old[0] += t_preprocess
+
+        exist, t_bool = BooleanTop1.l_cycle_split_bool(rel2tuple, tuple2weight, l)
+        Top1, t_top1 = BooleanTop1.l_cycle_split_top1(rel2tuple, tuple2weight, l)
+
+        print ('Time any-k split: ', t_preprocess + sum(time_for_each))
+
+
+    timetuple_bool = (t_bool, t_top1)
+    if cycle_or_not:
+        pickle.dump(time_for_each, open("../time_any/" + str(n)+'_'+str(l) + '_cycle', 'wb'))
+        pickle.dump(time_for_each_old, open("../time_old/" + str(n) + '_' + str(l) + '_cycle', 'wb'))
+        pickle.dump(timetuple_bool, open("../time_bool/" + str(n) + '_' + str(l) + '_cycle', 'wb'))
+
+    else:
+        pickle.dump(time_for_each, open("../time_any/" + str(n) + '_' + str(l) + '_path', 'wb'))
+        pickle.dump(time_for_each_old, open("../time_old/" + str(n) + '_' + str(l) + '_path', 'wb'))
+        pickle.dump(timetuple_bool, open("../time_bool/" + str(n) + '_' + str(l) + '_path', 'wb'))
+
+
+
 def measure_time_l_path(n, l, cycle_or_not):
     # simplest version, takes n and l. Useful version!
 
@@ -248,11 +372,22 @@ def measure_time_n(l):
         measure_time_l_path(int(n), l, False)  # acyclic
 
 def measure_time_l(n):
-    for l in range(3, 20):
+    for l in range(3, 17):
         measure_time_l_path(n, l, True)  # cyclic
         measure_time_l_path(n, l, False)  # acyclic
 
+def add_lazy_l(n, k):
+    for l in range(3, 17):
+        lazy_time_l_path(n, l, True, k)  # cyclic
+        lazy_time_l_path(n, l, False, k)  # acyclic
 
+
+def measure_lower4(n):
+    for l in range(3, 17):
+        get_time_lower4(n, l, True)
+        get_time_lower4(n, l, True)
+        lazy_time_l_path(n, l, True, k=1)  # cyclic
+        lazy_time_l_path(n, l, False, k=1)  # acyclic
 
 '''
 # single database, multiple queries.
@@ -283,6 +418,11 @@ def plot(mode, target, target_l):
     l2_any_k_time_path_old = []
     l2_any_k_TTF_path_old = []
 
+    l2_any_k_time_cycle_lazy = []
+    l2_any_k_TTF_cycle_lazy = []
+    l2_any_k_time_path_lazy = []
+    l2_any_k_TTF_path_lazy = []
+
     l2_boolean_path = []
     l2_boolean_cycle = []
     l2_top1_path = []
@@ -306,6 +446,11 @@ def plot(mode, target, target_l):
     n2_any_k_time_path_old = []
     n2_any_k_TTF_path_old = []
 
+    n2_any_k_time_cycle_lazy = []
+    n2_any_k_TTF_cycle_lazy = []
+    n2_any_k_time_path_lazy = []
+    n2_any_k_TTF_path_lazy = []
+
     n2_boolean_path = []
     n2_boolean_cycle = []
     n2_top1_path = []
@@ -317,6 +462,7 @@ def plot(mode, target, target_l):
         if isfile(join('../time_any', f)) and isfile(join('../time_all', f)) and isfile(join('../time_bool', f)):
             time_for_each = pickle.load(open(join('../time_any', f),'rb'))
             time_for_each_old = pickle.load(open(join('../time_old', f),'rb'))
+            time_for_each_lazy = pickle.load(open(join('../time_lazy', f), 'rb'))
             timetuple_full = pickle.load(open(join('../time_all', f), 'rb'))
             timetuple_bool = pickle.load(open(join('../time_bool', f), 'rb'))
             n = int(f.split('_')[0])
@@ -328,8 +474,10 @@ def plot(mode, target, target_l):
             results_count = []
             time_till_now = []
             time_till_now_old = []
+            time_till_now_lazy = []
             accumulated_time = 0
             accumulated_time_old = 0 # not deepak improved
+            accumulated_time_lazy = 0
             if n == 5 and mode != 2:
                 print "another measurment "
                 continue
@@ -339,12 +487,13 @@ def plot(mode, target, target_l):
 
             for i in range(len(time_for_each)):
                 time_till_now.append(time_for_each[i] + accumulated_time)
-
                 time_till_now_old.append(time_for_each_old[i] + accumulated_time_old)
+                time_till_now_lazy.append(time_for_each_lazy[i] + accumulated_time_lazy)
 
                 accumulated_time = time_for_each[i] + accumulated_time
-
                 accumulated_time_old = time_for_each_old[i] + accumulated_time_old
+                accumulated_time_lazy = time_for_each_lazy[i] + accumulated_time_lazy
+
                 results_count.append(i+1)
                 time_for_all.append(timetuple_full[1])
                 time_bool.append(timetuple_bool[0])
@@ -352,6 +501,8 @@ def plot(mode, target, target_l):
 
             if n == target:
                 if cycle_or_not:
+                    l2_any_k_TTF_cycle_lazy.append(time_for_each_lazy[0])
+                    l2_any_k_time_cycle_lazy.append(accumulated_time_lazy)
                     l2_any_k_TTF_cycle.append(time_for_each[0])
                     l2_any_k_time_cycle.append(accumulated_time)
                     l2_any_k_TTF_cycle_old.append(time_for_each_old[0])
@@ -362,6 +513,8 @@ def plot(mode, target, target_l):
                     l2_top1_cycle.append(timetuple_bool[1])
                     l_values_cycle.append(l)
                 else:
+                    l2_any_k_TTF_path_lazy.append(time_for_each_lazy[0])
+                    l2_any_k_time_path_lazy.append(accumulated_time_lazy)
                     l2_any_k_TTF_path.append(time_for_each[0])
                     l2_any_k_time_path.append(accumulated_time)
                     l2_any_k_TTF_path_old.append(time_for_each_old[0])
@@ -374,6 +527,8 @@ def plot(mode, target, target_l):
 
             if l == target_l:
                 if cycle_or_not:
+                    n2_any_k_TTF_cycle_lazy.append(time_for_each_lazy[0])
+                    n2_any_k_time_cycle_lazy.append(accumulated_time_lazy)
                     n2_any_k_TTF_cycle.append(time_for_each[0])
                     n2_any_k_time_cycle.append(accumulated_time)
                     n2_any_k_TTF_cycle_old.append(time_for_each_old[0])
@@ -384,6 +539,8 @@ def plot(mode, target, target_l):
                     n2_top1_cycle.append(timetuple_bool[1])
                     n_values_cycle.append(n)
                 else:
+                    n2_any_k_TTF_path_lazy.append(time_for_each_lazy[0])
+                    n2_any_k_time_path_lazy.append(accumulated_time_lazy)
                     n2_any_k_TTF_path.append(time_for_each[0])
                     n2_any_k_time_path.append(accumulated_time)
                     n2_any_k_TTF_path_old.append(time_for_each_old[0])
@@ -424,7 +581,7 @@ def plot(mode, target, target_l):
         if target == 5:
             compare1 = np.power(1.89, l_values_cycle)
         else:
-            compare1 = np.power(2.6, l_values_path)
+            compare1 = np.power(2.55, l_values_path)
         compare1 = np.true_divide(compare1, 50000)
         compare1 = [x for _, x in sorted(zip(l_values_cycle, compare1))]
         compare2 = l_values_cycle
@@ -437,9 +594,13 @@ def plot(mode, target, target_l):
         line_6, = plt.plot(l_values_cycle, l2_boolean_cycle, 'D', color='lime',label='line 6')
         line_7, = plt.plot(l_values_cycle, l2_top1_cycle, 'p',color='brown', label='line 7')
 
-        labels = [line_1, line_3, line_4, line_2, line_3_, line_1_, line_7, line_5, line_6]
-        handles = ['any-k sort TTL', 'any-k max TTL', 'n^(l/2)', 'full ranking', 'any-k max TTF', 'any-k sort TTF',
+        line_8, = plt.plot(l_values_cycle, l2_any_k_time_cycle_lazy, 'h', color='darkgray', label='line 8')
+        line_9, = plt.plot(l_values_cycle, l2_any_k_TTF_cycle_lazy, '<', color='steelblue', label='line 9')
+
+        labels = [line_8, line_1, line_3, line_4, line_2, line_3_, line_1_, line_9, line_7, line_5, line_6]
+        handles = ['any-k lazy TTL','any-k sort TTL', 'any-k max TTL', 'n^(l/2)', 'full ranking', 'any-k max TTF', 'any-k sort TTF', 'any-k lazy TTF',
                    "top-1", "l", "boolean"]
+
         plt.legend(labels, handles)
         #plt.legend([line_1, line_1_, line_2, line_3, line_3_, line_4, line_5, line_6, line_7], ['any-k sort TTL', 'any-k sort TTF', 'full ranking TTF/TTL', 'any-k max TTL', 'any-k max TTF', 'n^(l/2)', "l", "boolean", "top-1"])
         plt.title('Cycle')
@@ -460,7 +621,7 @@ def plot(mode, target, target_l):
         if target == 5:
             compare1 = np.power(1.89, l_values_path)
         else:
-            compare1 = np.power(2.58, l_values_path)
+            compare1 = np.power(2.55, l_values_path)
 
         compare1 = np.true_divide(compare1, 8000)
         compare1 = [x for _, x in sorted(zip(l_values_path, compare1))]
@@ -481,14 +642,17 @@ def plot(mode, target, target_l):
         line_6, = plt.plot(l_values_path, l2_boolean_path, 'D', color='lime',label='line 6')
         line_7, = plt.plot(l_values_path, l2_top1_path, 'p',color='brown', label='line 7')
 
+        line_8, = plt.plot(l_values_path, l2_any_k_time_path_lazy, 'h',color='darkgray', label='line 8')
+        line_9, = plt.plot(l_values_path, l2_any_k_TTF_path_lazy, '<', color='steelblue', label='line 9')
 
 
-        labels = [line_1, line_1_, line_2, line_3, line_3_, line_4, line_5, line_6, line_7]
-        handles = ['any-k sort TTL', 'any-k sort TTF', 'full ranking', 'any-k max TTL', 'any-k max TTF', 'n^(l/2)', "l",
-         "boolean", "top-1"]
 
-        labels = [line_1, line_3, line_4, line_2, line_3_, line_1_, line_7, line_5, line_6]
-        handles = ['any-k sort TTL', 'any-k max TTL',  'n^(l/2)', 'full ranking',  'any-k max TTF', 'any-k sort TTF',
+        #labels = [line_1, line_1_, line_2, line_3, line_3_, line_4, line_5, line_6, line_7]
+        #handles = ['any-k sort TTL', 'any-k sort TTF', 'full ranking', 'any-k max TTL', 'any-k max TTF', 'n^(l/2)', "l",
+        # "boolean", "top-1"]
+
+        labels = [line_8, line_1, line_3, line_4, line_2, line_3_, line_1_,line_9, line_7, line_5, line_6]
+        handles = ['any-k lazy TTL', 'any-k sort TTL', 'any-k max TTL',  'n^(l/2)', 'full ranking',  'any-k max TTF', 'any-k sort TTF', 'any-k lazy TTF',
                    "top-1",  "l", "boolean"]
         #labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: t[0]))
         plt.legend(labels, handles)
@@ -593,20 +757,10 @@ def plot(mode, target, target_l):
         plt.title('4-Path')
         plt.show()
 
-        #plt.xlabel('n')
-        #plt.ylabel('time (seconds)')
-        #plt.yscale('log')
-        #plt.xscale('log')
 
-        #line_1, = plt.plot(n_values_path, n2_any_k_TTF_path, 'o', label='line 1')
-        #line_2, = plt.plot(n_values_path, n2_full_time_path, 'o', label='Line 2')
-        #line_3, = plt.plot(n_values_path, n2_any_k_TTF_path_old, 'o', label='Line 3')
-        #line_4, = plt.plot(n_values_path, np.power(n_values_path, exp), label='line 4')
-        #line_5, = plt.plot(n_values_path, np.power(n_values_path, 1), label='line 5')
-        #plt.legend([line_1, line_2, line_3, line_4, line_5],
-        #           ['any-k sort', 'full ranking', 'any-k max', 'n^' + str(exp), 'n'])
-        #plt.title('Path TTF')
-        #plt.show()
+def plot_lower4():
+    pass
+#TODO: add plot for lower 4
 
 
 if __name__ == "__main__":
@@ -621,6 +775,7 @@ if __name__ == "__main__":
 
     n = 10
     #measure_time_l(n)
+    #add_lazy_l(n, k=999999999)
     plot(2, n, 0) # l-scalability
 
     #l = 4
