@@ -151,7 +151,7 @@ def priority_search_l_cycle_naive_init(rel2tuple, tuple2weight, bp_set, bptu2dow
 
     if Deepak:
         if Lazy:
-            prev2sortedmap, prev2heap = Deepak_sort_cycle_lazy(tuple2rem, bp_set, tuple2weight, rel2tuple, l)
+            prev2sortedmap, prev2heap = Deepak_sort_cycle_lazy(tuple2rem, bp_set, tuple2weight, rel2tuple, l, batch_insert=True)
         else:
             prev2sortedmap = Deepak_sort_cycle(tuple2rem, bp_set, tuple2weight, rel2tuple, l)
             prev2heap = None
@@ -260,7 +260,7 @@ def simple_join(rel2tuple, tuple2weight, tu2down_neis, start, end):
     return list2wgt
 
 
-def priority_search_l_cycle_light_init(rel2tuple, tuple2weight, tu2down_neis, l, Deepak, Lazy, PQmode, bound):
+def priority_search_l_cycle_light_init(rel2tuple, tuple2weight, tu2down_neis, l, Deepak, Lazy, PQmode, bound, batch_insert):
 
     #print rel2tuple
     # compute a set of I1_list, a set of I2_list
@@ -309,7 +309,17 @@ def priority_search_l_cycle_light_init(rel2tuple, tuple2weight, tu2down_neis, l,
             localdict = dict()
             list = key2list[k]
             if Lazy:
-                heapq.heapify(list)
+                #heapq.heapify(list)
+
+                if batch_insert:
+                    heapq.heapify(list)
+                else:
+                    old_list = key2list[k]
+                    list = []
+                    for item in old_list:
+                        heapq.heappush(list, item)
+
+
                 if len(list) != 0:
                     localdict['#'] = list[0][1]
                     heapq.heappop(list)
@@ -447,7 +457,7 @@ def Deepak_sort_cycle(tuple2rem, breakpoints, tuple2weight, rel2tuple, l):
     return res
 
 
-def Deepak_sort_cycle_lazy(tuple2rem, breakpoints, tuple2weight, rel2tuple, l):
+def Deepak_sort_cycle_lazy(tuple2rem, breakpoints, tuple2weight, rel2tuple, l, batch_insert):
     # lazy sort: return a heap and a dictionary: the dictionary is originally empty; the caller of it will keep modifying it.
     # the heap keeps all content
     # caller check if key is in dictionary: if so, find and use; if not, pop from heap and put into dict, use.
@@ -472,8 +482,17 @@ def Deepak_sort_cycle_lazy(tuple2rem, breakpoints, tuple2weight, rel2tuple, l):
     res = dict()
     for k in key2list:
         localdict = dict()
-        list = key2list[k]
-        heapq.heapify(list)
+        if batch_insert:
+            list = key2list[k]
+            heapq.heapify(list)
+        else:
+            old_list = key2list[k]
+            list = []
+            for item in old_list:
+                heapq.heappush(list, item)
+
+
+
         #heapify in O(n), instead of list.sort()
 
         if len(list)!= 0:
@@ -549,7 +568,7 @@ def Deepak_sort_path(tuple2rem, tuple2weight, rel2tuple, l):
     # print res
     return res
 
-def Deepak_sort_path_lazy(tuple2rem, tuple2weight, rel2tuple, l):
+def Deepak_sort_path_lazy(tuple2rem, tuple2weight, rel2tuple, l, batch_insert):
     # l is the goal length, build sorted subtree weights for R0, R1...Rl-1
     key2list = dict() # first map all keys in the output dictionary into a list of (subtree-weight, tuple)
 
@@ -574,8 +593,16 @@ def Deepak_sort_path_lazy(tuple2rem, tuple2weight, rel2tuple, l):
     res = dict()
     for k in key2list:
         localdict = dict()
-        list = key2list[k]
-        heapq.heapify(list)
+
+        if batch_insert:
+            list = key2list[k]
+            heapq.heapify(list)
+        else:
+            old_list = key2list[k]
+            list = []
+            for item in old_list:
+                heapq.heappush(list, item)
+
 
         if len(list)!= 0:
             localdict['#'] = list[0][1]
@@ -587,7 +614,7 @@ def Deepak_sort_path_lazy(tuple2rem, tuple2weight, rel2tuple, l):
     return res, key2list
 
 
-def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak, Lazy, PQmode, bound, debug):
+def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak, Lazy, PQmode, bound, debug, batch_insert):
 
     #Deepak = True: only push sorted successors.
     if debug:
@@ -602,7 +629,7 @@ def priority_search_l_path(K, rel2tuple, tuple2weight, tu2down_neis, l, Deepak, 
 
     if Deepak:  #push only "null pointed first heads"
         if Lazy:
-            prev2sortedmap, prev2heap = Deepak_sort_path_lazy(tuple2rem, tuple2weight, rel2tuple, l)
+            prev2sortedmap, prev2heap = Deepak_sort_path_lazy(tuple2rem, tuple2weight, rel2tuple, l, batch_insert)
         else:
             prev2sortedmap = Deepak_sort_path(tuple2rem, tuple2weight, rel2tuple, l)
 
@@ -778,12 +805,12 @@ def l_path_sim(l, k, PQmode, bound):
     rel2tuple, tuple2weight = semi_join_utils.build_relation(l, var2cand, weightrange=10)
     tu2down_neis, tu2up_neis = path_SJ_reduce_l(rel2tuple, l)
     print "algo: any-k priotitized search WWW"
-    TOP_K_max, time_for_each = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, False, False, PQmode, bound, debug=True)
+    TOP_K_max, time_for_each = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, False, False, PQmode, bound, debug=True, batch_insert=True)
     print "algo: any-k priotitized search Deepak"
-    TOP_K_sort, time_for_each = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, True, False, PQmode, bound, debug=True)
+    TOP_K_sort, time_for_each = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, True, False, PQmode, bound, debug=True, batch_insert=True)
     print "algo: any-k priotitized search Lazy sort"
     TOP_K_sort, time_for_each = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, True, True, PQmode,
-                                                       bound, debug=True)
+                                                       bound, debug=True, batch_insert=True)
     # assert TOP_K_PQ2 == TOP_K_PQ1 -- observed only rounding numerical errors, ignore.
     print "algo: enumerate all"
     path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis, k, l, debug=True)
@@ -1028,7 +1055,7 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, Lazy,
     tu2down_neis, tu2up_neis = cycle_SJ_reduce_l_light(partitions[l], l)
 
     bp2sortedmap, bp2heap, breakpoints2I2, I2_list2wgt, PQ = \
-            priority_search_l_cycle_light_init(partitions[l], tuple2weight, tu2down_neis, l, Deepak, Lazy, PQmode, bound)
+            priority_search_l_cycle_light_init(partitions[l], tuple2weight, tu2down_neis, l, Deepak, Lazy, PQmode, bound, batch_insert=True)
 
     small_PQ_list.append(PQ)
 
@@ -1172,12 +1199,12 @@ def run_path_example(n, l, k, PQmode, bound):
     rel2tuple, tuple2weight = DataGenerator.getDatabase("Path", n, l, "Full", "Random")
     tu2down_neis, tu2up_neis = path_SJ_reduce_l(rel2tuple, l)
     print "PATH algo: any-k sort"
-    TOP_K_sort, time_for_each_sort = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= True, Lazy= False, PQmode = PQmode, bound = bound, debug = True)
+    TOP_K_sort, time_for_each_sort = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= True, Lazy= False, PQmode = PQmode, bound = bound, debug = True, batch_insert=True)
     print "PATH algo: any-k max"
-    TOP_K_max, time_for_each_max = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= False, Lazy= False, PQmode = PQmode, bound = bound, debug = True)
+    TOP_K_max, time_for_each_max = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= False, Lazy= False, PQmode = PQmode, bound = bound, debug = True, batch_insert=True)
     print "PATH algo: any-k lazy"
     TOP_K_lazy, time_for_each_lazy = priority_search_l_path(k, rel2tuple, tuple2weight, tu2down_neis, l, Deepak=True,
-                                                          Lazy=True, PQmode=PQmode, bound=bound, debug=True)
+                                                          Lazy=True, PQmode=PQmode, bound=bound, debug=True, batch_insert=True)
     print "PATH algo: enumerate all"
     sorted_values = path_enumerate_all(rel2tuple, tuple2weight, tu2down_neis, k, l, debug = True)
 
