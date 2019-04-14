@@ -321,10 +321,10 @@ def measure_time_n_v2(n_start, n_end, l, cycle_or_not):
         else:  # cycle
             # TODO: add any-k naive
             print "algo: any-k split version"
-            TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, PQmode= "Heap", bound = k, debug = False)
+            TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, PQmode= "Heap", bound = k, debug = False, batch_insert=True)
             if len(time_for_each) > 0:
                 time_for_each[0] += t_preprocess
-            TOP_K, time_for_each_old = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=False, PQmode= "Heap", bound = k, debug = False)
+            TOP_K, time_for_each_old = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=False, PQmode= "Heap", bound = k, debug = False, batch_insert=True)
             if len(time_for_each_old) > 0:
                 time_for_each_old[0] += t_preprocess
             t1 = timeit.default_timer()
@@ -1074,9 +1074,9 @@ if __name__ == "__main__":
     #plot(2, 15)
     #measure_time_grow_v2()
 
-    #measure_time_n_v2(3, 50, 4, True) #4-cycle
-    #measure_time_n_v2(3, 50, 4, False) #4-path
-    #plot(1, 0, 0) # any-k property.
+    measure_time_n_v2(3, 50, 4, True) #4-cycle
+    measure_time_n_v2(3, 50, 4, False) #4-path
+    plot(1, 0, 0) # any-k property.
 
     #n = 10
     #measure_time_l(n)

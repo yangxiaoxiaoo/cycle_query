@@ -1013,7 +1013,7 @@ def l_cycle_naive(l, k):
         assert TOP_K_PQ == TOP_K_PQ2
 '''
 
-def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, Lazy, PQmode, bound, debug):
+def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, Lazy, PQmode, bound, debug, batch_insert):
     time_start = timeit.default_timer()
 
     partitions = l_cycle_database_partition(rel2tuple, l)
@@ -1055,7 +1055,7 @@ def l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak, Lazy,
     tu2down_neis, tu2up_neis = cycle_SJ_reduce_l_light(partitions[l], l)
 
     bp2sortedmap, bp2heap, breakpoints2I2, I2_list2wgt, PQ = \
-            priority_search_l_cycle_light_init(partitions[l], tuple2weight, tu2down_neis, l, Deepak, Lazy, PQmode, bound, batch_insert=True)
+            priority_search_l_cycle_light_init(partitions[l], tuple2weight, tu2down_neis, l, Deepak, Lazy, PQmode, bound, batch_insert)
 
     small_PQ_list.append(PQ)
 
@@ -1239,17 +1239,17 @@ def run_cycle_example(n, l, k, PQmode, bound):
     rel2tuple, tuple2weight = DataGenerator.getDatabase("Cycle", n, l, "Full", "Random")
     tu2down_neis, tu2up_neis = cycle_SJ_reduce_l_light(rel2tuple, l)
     print "Cycle algo: any-k sort"
-    TOP_K_sort, time_for_each_sort = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, Lazy=False,PQmode= PQmode, bound = bound, debug = True)
+    TOP_K_sort, time_for_each_sort = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True, Lazy=False,PQmode= PQmode, bound = bound, debug = True, batch_insert=True)
     for PEI in TOP_K_sort:
         print PEI.wgt
     print "Cycle algo: any-k max"
-    TOP_K_max, time_for_each_max = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=False, Lazy=False, PQmode=PQmode, bound=bound, debug=True)
+    TOP_K_max, time_for_each_max = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=False, Lazy=False, PQmode=PQmode, bound=bound, debug=True, batch_insert=True)
     for PEI in TOP_K_max:
         print PEI.wgt
     print "Cycle algo: any-k lazy"
     TOP_K_lazy, time_for_each_lazy = l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k, l, Deepak=True,
                                                                        Lazy=True, PQmode=PQmode, bound=bound,
-                                                                       debug=True)
+                                                                       debug=True,batch_insert=True)
 
     print "Cycle algo: enumerate all"
     results, sorted_values = cycle_enumerate_all(rel2tuple, tuple2weight, tu2up_neis, tu2down_neis, k, l, False, debug= True)

@@ -111,19 +111,19 @@ if impl == "batch_ranking":
 else:
 	if query == "Path":
 		if impl == "anyk_sort" or impl == "anyk_sort_unbounded":
-			TOP_K, time_for_each = CQ.priority_search_l_path(k_limit, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= True, Lazy = False, PQmode = pq, bound = None, debug = False)
+			TOP_K, time_for_each = CQ.priority_search_l_path(k_limit, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= True, Lazy = False, PQmode = pq, bound = None, debug = False,  batch_insert=True)
 		elif impl == "anyk_lazy" or impl == "anyk_lazy_unbounded":
-			TOP_K, time_for_each = CQ.priority_search_l_path(k_limit, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= False, Lazy = False, PQmode = pq, bound = None, debug = False)
+			TOP_K, time_for_each = CQ.priority_search_l_path(k_limit, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= False, Lazy = False, PQmode = pq, bound = None, debug = False, batch_insert=True)
 		elif impl == "anyk_lazysort" or impl == "anyk_lazysort_unbounded":
-			TOP_K, time_for_each = CQ.priority_search_l_path(k_limit, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= True, Lazy = True, PQmode = pq, bound = None, debug = False)
+			TOP_K, time_for_each = CQ.priority_search_l_path(k_limit, rel2tuple, tuple2weight, tu2down_neis, l, Deepak= True, Lazy = True, PQmode = pq, bound = None, debug = False, batch_insert=True)
 
 	elif query == "Cycle":	
 		if impl == "anyk_sort" or impl == "anyk_sort_unbounded":
-			TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k_limit, l, Deepak=True, Lazy = False, PQmode= pq, bound = None, debug = False)
+			TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k_limit, l, Deepak=True, Lazy = False, PQmode= pq, bound = None, debug = False, batch_insert=True)
 		elif impl == "anyk_lazy" or impl == "anyk_lazy_unbounded":
-			TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k_limit, l, Deepak=False, Lazy = False, PQmode= pq, bound = None, debug = False)
+			TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k_limit, l, Deepak=False, Lazy = False, PQmode= pq, bound = None, debug = False, batch_insert=True)
 		elif impl == "anyk_lazysort" or impl == "anyk_lazysort_unbounded":
-			TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k_limit, l, Deepak=True, Lazy = True, PQmode= pq, bound = None, debug = False)
+			TOP_K, time_for_each = CQ.l_cycle_split_prioritied_search(rel2tuple, tuple2weight, k_limit, l, Deepak=True, Lazy = True, PQmode= pq, bound = None, debug = False, batch_insert=True)
 
 	print str(len(TOP_K)) + " results " + str(len(time_for_each)) + " times"
 	times = sanitize_times(time_for_each, t_preprocess)
